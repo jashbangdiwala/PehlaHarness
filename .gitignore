@@ -1,0 +1,4 @@
+.venv/
+ea.db
+allowed_id.txt
+__pycache__/
