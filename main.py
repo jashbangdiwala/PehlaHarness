@@ -24,7 +24,9 @@ def handle(update):
         log("dropped", {"reason": "no allowlist yet"})
         return
     if uid != ALLOWED:
-        log("dropped", {"reason": "not allowed"})   # silent: no reply, no content stored
+        log("dropped", {"reason": "not allowed", "uid": uid,
+                        "name": msg["from"].get("first_name"),
+                        "text": msg["text"]})   # silent: no reply
         return
     mid = log("message", {"text": msg["text"]})
     reply = ask([

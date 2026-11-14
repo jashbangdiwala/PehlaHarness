@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Start now: harness v0 in ~45 minutes</title>
+<style>
+:root{--bg:#12161c;--panel:#1b222b;--ink:#e8edf2;--mute:#9aa7b5;--acc:#5ec4a8;--warn:#f0b35a;--line:#2c3743}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 Georgia,"Iowan Old Style",serif;padding:env(safe-area-inset-top) 0 40px}
+main{max-width:780px;margin:0 auto;padding:0 20px}
+h1{font-size:2rem;line-height:1.15;margin:44px 0 8px}
+h1 span{color:var(--acc)}
+h2{font-size:1.2rem;margin:36px 0 8px;color:var(--acc)}
+h2 i{font-style:normal;background:var(--acc);color:#0b0e12;border-radius:50%;display:inline-block;width:1.6em;height:1.6em;line-height:1.6em;text-align:center;font-size:.85em;margin-right:8px}
+p{margin:0 0 12px}
+.lede{color:var(--mute)}
+.box{background:var(--panel);border-left:4px solid var(--warn);padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+.box b{color:var(--warn)}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.86em;background:#0b0e12;padding:1px 6px;border-radius:4px}
+.cb{position:relative;margin:0 0 14px}
+pre{background:#0b0e12;border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;font:.83rem/1.5 ui-monospace,Menlo,monospace;margin:0}
+.cp{position:absolute;top:6px;right:6px;background:var(--panel);color:var(--mute);border:1px solid var(--line);border-radius:6px;font:.75rem system-ui;padding:3px 9px;cursor:pointer}
+.file{font:.8rem ui-monospace,Menlo,monospace;color:var(--warn);margin:0 0 4px}
+.done{color:var(--acc)}
+.foot{color:var(--mute);font-size:.9rem;margin-top:40px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>Start now: <span>harness v0</span></h1>
+<p class="lede">A Telegram bot on your Mac that only answers you, sends your messages to a model through one guarded function, and logs everything. About 45 minutes. Do the steps in order.</p>
+
+<h2><i>0</i>Check Python</h2>
+<p>Open Terminal.</p>
+<div class="cb"><pre>python3 --version</pre></div>
+<p>Need 3.10 or newer. If not: install from python.org, or <code>brew install python</code> if you use Homebrew.</p>
+
+<h2><i>1</i>Create the project</h2>
+<div class="cb"><pre>mkdir -p ~/projects/ea &amp;&amp; cd ~/projects/ea
+python3 -m venv .venv
+source .venv/bin/activate
+pip install httpx keyring pytest
+printf ".venv/\nea.db\nallowed_id.txt\n__pycache__/\n" &gt; .gitignore
+git init</pre></div>
+<p>Keep this folder outside iCloud/Dropbox sync. Every new Terminal window needs <code>source .venv/bin/activate</code> again.</p>
+
+<h2><i>2</i>Make the Telegram bot</h2>
+<p>In Telegram, message <b>@BotFather</b>, send <code>/newbot</code>, pick a name and username. It gives you a token. Keep it private for now.</p>
+
+<h2><i>3</i>Get an OpenRouter key</h2>
+<p>At openrouter.ai: add about $5 credit, create an API key, and set a credit limit on that key. Then browse their models page, filter for open-weight, and copy a model ID for step 6.</p>
+
+<h2><i>4</i>Store both secrets in Keychain</h2>
+<p>Each command prompts you, so nothing lands in shell history.</p>
+<div class="cb"><pre>python -c "import keyring,getpass; keyring.set_password('ea','telegram',getpass.getpass('telegram token: '))"
+python -c "import keyring,getpass; keyring.set_password('ea','openrouter',getpass.getpass('openrouter key: '))"</pre></div>
+<p>macOS may ask permission the first time it reads them. Allow it.</p>
+
+<h2><i>5</i>events.py: the log</h2>
+<p>Every step is a row. This is your single source of truth.</p>
+<div class="file">events.py</div>
+<div class="cb"><pre>import sqlite3, json, time
+
+db = sqlite3.connect("ea.db")
+db.execute("""CREATE TABLE IF NOT EXISTS events(
+  id INTEGER PRIMARY KEY, ts REAL, kind TEXT,
+  domain TEXT, payload TEXT, parent_id INTEGER)""")
+
+def log(kind, payload, domain="core", parent_id=None):
+    cur = db.execute(
+        "INSERT INTO events(ts,kind,domain,payload,parent_id) VALUES(?,?,?,?,?)",
+        (time.time(), kind, domain, json.dumps(payload), parent_id))
+    db.commit()
+    return cur.lastrowid</pre></div>
+
+<h2><i>6</i>egress.py: the one door to any model</h2>
+<p>Nothing else in your code is allowed to call a model. Redaction and logging happen here.</p>
+<div class="file">egress.py</div>
+<div class="cb"><pre>import re, time, httpx, keyring
+from events import log
+
+# Use a model ID copied from openrouter.ai/models. This is an example, verify it exists.
+MODEL = "meta-llama/llama-3.3-70b-instruct"
+
+PATTERNS = [
+    (re.compile(r"\b(?:\d[ -]?){13,19}\b"), "[CARD]"),
+    (re.compile(r"\bsk-[A-Za-z0-9_-]{16,}"), "[KEY]"),
+    # add your own: national ID formats, account numbers, etc.
+]
+
+def redact(text):
+    for pat, tag in PATTERNS:
+        text = pat.sub(tag, text)
+    return text
+
+def ask(messages, parent_id=None):
+    safe = [{"role": m["role"], "content": redact(m["content"])} for m in messages]
+    key = keyring.get_password("ea", "openrouter")
+    t = time.time()
+    r = httpx.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers={"Authorization": f"Bearer {key}"},
+        json={"model": MODEL, "messages": safe,
+              "provider": {"data_collection": "deny", "allow_fallbacks": False}},
+        timeout=60)
+    r.raise_for_status()
+    data = r.json()
+    text = data["choices"][0]["message"]["content"]
+    log("model_call", {"model": MODEL, "secs": round(time.time() - t, 2),
+                       "usage": data.get("usage")}, parent_id=parent_id)
+    return text</pre></div>
+<div class="box"><b>If you get a "no endpoints" error:</b> that model has no provider meeting the <code>data_collection: deny</code> setting. Pick another model. I have not verified these parameter names against current docs, so check OpenRouter's provider-routing page if it errors in another way.</div>
+
+<h2><i>7</i>main.py: Telegram loop</h2>
+<div class="file">main.py</div>
+<div class="cb"><pre>import os, time, httpx, keyring
+from events import log
+from egress import ask
+
+TOKEN = keyring.get_password("ea", "telegram")
+API = f"https://api.telegram.org/bot{TOKEN}"
+ID_FILE = "allowed_id.txt"
+ALLOWED = int(open(ID_FILE).read().strip()) if os.path.exists(ID_FILE) else None
+
+def scrub(e):
+    return repr(e).replace(TOKEN, "***")
+
+def send(chat_id, text):
+    httpx.post(f"{API}/sendMessage",
+               json={"chat_id": chat_id, "text": text}, timeout=30)
+
+def handle(update):
+    msg = update.get("message")
+    if not msg or "text" not in msg:
+        return
+    uid = msg["from"]["id"]
+    if ALLOWED is None:
+        print(f"Your Telegram user ID is {uid}. Put it in {ID_FILE} and restart.")
+        log("dropped", {"reason": "no allowlist yet"})
+        return
+    if uid != ALLOWED:
+        log("dropped", {"reason": "not allowed"})   # silent: no reply, no content stored
+        return
+    mid = log("message", {"text": msg["text"]})
+    reply = ask([
+        {"role": "system", "content": "You are a concise personal assistant."},
+        {"role": "user", "content": msg["text"]},
+    ], parent_id=mid)
+    log("reply", {"text": reply}, parent_id=mid)
+    send(msg["chat"]["id"], reply)
+
+def main():
+    offset = None
+    print("polling... (Ctrl-C to stop)")
+    while True:
+        params = {"timeout": 30}
+        if offset:
+            params["offset"] = offset
+        try:
+            r = httpx.get(f"{API}/getUpdates", params=params, timeout=40)
+            for u in r.json().get("result", []):
+                offset = u["update_id"] + 1
+                try:
+                    handle(u)
+                except Exception as e:
+                    log("error", {"err": scrub(e)})
+        except httpx.HTTPError as e:
+            log("error", {"err": scrub(e)})
+            time.sleep(5)
+
+if __name__ == "__main__":
+    main()</pre></div>
+
+<h2><i>8</i>First run: find your ID, lock the bot</h2>
+<div class="cb"><pre>caffeinate -s python main.py</pre></div>
+<ol style="padding-left:22px;margin:0 0 12px">
+<li>In Telegram, open your bot and send "hi".</li>
+<li>The terminal prints your user ID. Stop with Ctrl-C.</li>
+<li>Save it, then restart:</li>
+</ol>
+<div class="cb"><pre>echo 123456789 &gt; allowed_id.txt     # use YOUR id
+caffeinate -s python main.py</pre></div>
+<p class="done">Done when: you send "hi" and get a model reply in Telegram.</p>
+
+<h2><i>9</i>Check the log</h2>
+<p>In a second Terminal tab:</p>
+<div class="cb"><pre>cd ~/projects/ea
+sqlite3 ea.db "select id,kind,substr(payload,1,80) from events order by id desc limit 8"</pre></div>
+<p class="done">Done when: you see <code>message</code>, <code>model_call</code> (with tokens and seconds), and <code>reply</code> rows. A second Telegram account messaging the bot should add only a <code>dropped</code> row and get no reply.</p>
+
+<h2><i>10</i>Write the leak test</h2>
+<div class="file">test_leaks.py</div>
+<div class="cb"><pre>from egress import redact
+
+def test_card_is_redacted():
+    assert "4111 1111 1111 1111" not in redact("pay 4111 1111 1111 1111 now")
+
+def test_key_is_redacted():
+    assert "sk-abcdefghijklmnop1234" not in redact("my key sk-abcdefghijklmnop1234")</pre></div>
+<div class="cb"><pre>pytest -q</pre></div>
+<p class="done">Done when: both pass. Then comment out a pattern and watch it fail. That failure is the point of the test.</p>
+
+<div class="box"><b>Commit now:</b> <code>git add . &amp;&amp; git commit -m "v0: telegram echo via egress door"</code>. Never commit <code>ea.db</code> or <code>allowed_id.txt</code> (the .gitignore handles it).</div>
+
+<h2>What you just built</h2>
+<p>A poller (Telegram), an allowlist (security), an event log (memory), and one guarded model door (privacy). The loop, tools, and goals come next, each in its own file, without rewriting these.</p>
+
+<p class="foot">Next session: add the <code>log_time</code> tool and the kernel loop with step and cost caps. Terminal says <code>command not found: python</code>? Use <code>python3</code> outside the venv, and <code>python</code> inside it.</p>
+</main>
+<script>
+document.querySelectorAll('.cb').forEach(function(b){
+  var btn=document.createElement('button');btn.className='cp';btn.textContent='Copy';
+  btn.onclick=function(){navigator.clipboard.writeText(b.querySelector('pre').innerText).then(function(){btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy'},1200)})};
+  b.appendChild(btn);
+});
+</script>
+</body>
+</html>
