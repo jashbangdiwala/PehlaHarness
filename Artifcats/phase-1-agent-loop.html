@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Phase 1 Agent Loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap">
+<style>
+/* Harness Handbook: shared style. The same block is in every chapter; change all five together.
+   Layout: one reading column on a dark gradient ground. Every figure sits in a gradient-edged panel.
+   Colour is a code, used the same way in every diagram: violet = the model, blue = your harness code,
+   teal = tools, amber = stored data, rose = risk or refusal, green = done or passing. */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #090b13;
+  --surface: #121627;
+  --surface2: #1a2038;
+  --ink: #e9ecf6;
+  --muted: #9da6c0;
+  --faint: #6f7896;
+  --line: #242a44;
+  --line2: #37406a;
+  --code-bg: #0b0e1a;
+
+  --c-model: #b7a1ff;
+  --c-code: #72acff;
+  --c-tool: #4fe2c9;
+  --c-data: #ffc56e;
+  --c-risk: #ff8097;
+  --c-ok: #6fe8aa;
+
+  --c-model-s: rgba(183, 161, 255, 0.14);
+  --c-code-s: rgba(114, 172, 255, 0.14);
+  --c-tool-s: rgba(79, 226, 201, 0.13);
+  --c-data-s: rgba(255, 197, 110, 0.13);
+  --c-risk-s: rgba(255, 128, 151, 0.13);
+  --c-ok-s: rgba(111, 232, 170, 0.13);
+
+  --grad: linear-gradient(100deg, #4fe2c9 0%, #72acff 48%, #b7a1ff 100%);
+  --grad-edge: linear-gradient(140deg, rgba(79, 226, 201, 0.55), rgba(114, 172, 255, 0.22) 42%, rgba(183, 161, 255, 0.55));
+
+  /* older names, kept so every component reads from one palette */
+  --accent: #8ebcff;
+  --accent-soft: var(--c-code-s);
+  --ok: var(--c-ok);
+  --ok-soft: var(--c-ok-s);
+  --warn: var(--c-data);
+  --warn-soft: var(--c-data-s);
+
+  --font-head: "Space Grotesk", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --col: 46rem;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; background: var(--bg); }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font: 1rem/1.65 var(--font-body);
+  background:
+    radial-gradient(900px 480px at 10% -6%, rgba(114, 172, 255, 0.22), transparent 62%),
+    radial-gradient(760px 440px at 94% -4%, rgba(183, 161, 255, 0.20), transparent 60%),
+    radial-gradient(720px 520px at 52% 4%, rgba(79, 226, 201, 0.09), transparent 66%),
+    var(--bg);
+  background-repeat: no-repeat;
+}
+
+.wrap {
+  max-width: var(--col);
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* ---------- chapter bar ---------- */
+
+.topbar { border-bottom: 1px solid var(--line); background: rgba(9, 11, 19, 0.55); }
+.topbar .wrap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1.25rem; padding-block: 0.8rem; }
+.brand {
+  font: 600 0.95rem var(--font-head);
+  text-decoration: none;
+  margin-right: auto;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.topbar nav { display: flex; flex-wrap: wrap; gap: 0.15rem 1rem; }
+.topbar nav a {
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 0.15rem 0;
+  border-bottom: 2px solid transparent;
+}
+.topbar nav a:hover { color: var(--ink); }
+.topbar nav a[aria-current="page"] { color: var(--ink); border-image: var(--grad) 1; }
+
+/* ---------- page ---------- */
+
+main.wrap { padding-block: 2.75rem 5rem; }
+
+.eyebrow {
+  font: 500 0.75rem var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+h1, h2, h3 { font-family: var(--font-head); text-wrap: balance; line-height: 1.2; }
+h1 {
+  font-size: 2.5rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0 0 1rem;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+h2 { font-size: 1.45rem; font-weight: 600; margin: 3.5rem 0 0.75rem; }
+h3 { font-size: 1.05rem; font-weight: 600; margin: 1.75rem 0 0.4rem; }
+
+p { margin: 0 0 1rem; }
+.lede { font-size: 1.15rem; line-height: 1.6; color: var(--ink); }
+.small { font-size: 0.9rem; color: var(--muted); }
+
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 2px solid var(--c-tool);
+  outline-offset: 2px;
+}
+
+ul, ol { margin: 0 0 1rem; padding-left: 1.35rem; }
+li { margin: 0.3rem 0; }
+li > ul, li > ol { margin-bottom: 0; }
+strong { font-weight: 600; }
+
+code {
+  font: 0.86em var(--font-mono);
+  background: var(--surface2);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- status chips ---------- */
+
+.chip {
+  display: inline-block;
+  font: 500 0.7rem var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: var(--surface2);
+  color: var(--muted);
+}
+.chip.done { background: var(--c-ok-s); color: var(--c-ok); }
+.chip.next { background: var(--grad); color: #071019; font-weight: 600; }
+
+/* ---------- figures ---------- */
+
+.fig {
+  margin: 1.25rem 0 1.75rem;
+  padding: 1px;
+  border-radius: 15px;
+  background: var(--grad-edge);
+}
+.fig > .in {
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 1rem 1rem 0.85rem;
+}
+.fig figcaption {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.fig figcaption b { color: var(--ink); font-weight: 600; }
+.dgwrap { overflow-x: auto; }
+.dg { display: block; width: 100%; height: auto; min-width: 520px; }
+.dg.sm { min-width: 0; }
+
+.dg text { font-family: var(--font-body); fill: var(--ink); }
+.dg .t { font-size: 13px; font-weight: 600; }
+.dg .ts { font-size: 11.5px; font-weight: 400; fill: var(--muted); }
+.dg .tm { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; }
+.dg .tl { font-size: 11px; fill: var(--muted); paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+.dg .th { font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.08em; fill: var(--faint); text-transform: uppercase; }
+.dg .t.model, .dg .tl.model, .dg .ts.model { fill: var(--c-model); }
+.dg .t.code, .dg .tl.code, .dg .ts.code { fill: var(--c-code); }
+.dg .t.tool, .dg .tl.tool, .dg .ts.tool { fill: var(--c-tool); }
+.dg .t.data, .dg .tl.data, .dg .ts.data { fill: var(--c-data); }
+.dg .t.risk, .dg .tl.risk, .dg .ts.risk { fill: var(--c-risk); }
+.dg .t.ok, .dg .tl.ok, .dg .ts.ok { fill: var(--c-ok); }
+
+.dg .b { fill: var(--surface2); stroke: var(--line2); stroke-width: 1.2; }
+.dg .b.model { fill: var(--c-model-s); stroke: var(--c-model); }
+.dg .b.code { fill: var(--c-code-s); stroke: var(--c-code); }
+.dg .b.tool { fill: var(--c-tool-s); stroke: var(--c-tool); }
+.dg .b.data { fill: var(--c-data-s); stroke: var(--c-data); }
+.dg .b.risk { fill: var(--c-risk-s); stroke: var(--c-risk); }
+.dg .b.ok { fill: var(--c-ok-s); stroke: var(--c-ok); }
+.dg .b.out { fill: none; stroke: var(--faint); stroke-dasharray: 5 4; }
+.dg .b.band { fill: rgba(255, 255, 255, 0.025); stroke: var(--line); }
+.dg .b.frame { fill: rgba(114, 172, 255, 0.05); stroke: var(--c-code); stroke-dasharray: 2 5; stroke-linecap: round; }
+
+.dg .ln { fill: none; stroke: var(--faint); stroke-width: 1.5; }
+.dg .ln.model { stroke: var(--c-model); }
+.dg .ln.code { stroke: var(--c-code); }
+.dg .ln.tool { stroke: var(--c-tool); }
+.dg .ln.data { stroke: var(--c-data); }
+.dg .ln.risk { stroke: var(--c-risk); }
+.dg .ln.ok { stroke: var(--c-ok); }
+.dg .ln.dash { stroke-dasharray: 5 4; }
+.dg .ln.thick { stroke-width: 3; stroke-linecap: round; }
+.mk { fill: var(--faint); }
+.mk.model { fill: var(--c-model); }
+.mk.code { fill: var(--c-code); }
+.mk.tool { fill: var(--c-tool); }
+.mk.data { fill: var(--c-data); }
+.mk.risk { fill: var(--c-risk); }
+.mk.ok { fill: var(--c-ok); }
+
+.dg .hot .b { stroke-width: 2.4; filter: drop-shadow(0 0 7px rgba(114, 172, 255, 0.55)); }
+.dg a { cursor: pointer; }
+.dg a:hover .t { text-decoration: underline; }
+
+/* two figures side by side, stacking when narrow */
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; margin: 1.25rem 0 1.75rem; }
+.duo .fig { margin: 0; }
+@media (max-width: 38rem) { .duo { grid-template-columns: minmax(0, 1fr); } }
+.figtitle { font: 600 0.75rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.5rem; }
+
+/* colour key */
+.key { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin: 0.75rem 0 1.25rem; padding: 0; list-style: none; font-size: 0.88rem; color: var(--muted); }
+.key li { margin: 0; display: inline-flex; align-items: center; gap: 0.4rem; }
+.key i { width: 0.8rem; height: 0.8rem; border-radius: 3px; border: 1.5px solid; display: inline-block; }
+.key .model { border-color: var(--c-model); background: var(--c-model-s); }
+.key .code { border-color: var(--c-code); background: var(--c-code-s); }
+.key .tool { border-color: var(--c-tool); background: var(--c-tool-s); }
+.key .data { border-color: var(--c-data); background: var(--c-data-s); }
+.key .risk { border-color: var(--c-risk); background: var(--c-risk-s); }
+.key .out { border-color: var(--faint); border-style: dashed; }
+
+/* ---------- code, prompts, terminal ---------- */
+
+.codebox {
+  margin: 0.75rem 0 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--code-bg);
+  overflow: hidden;
+}
+.codebox > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.5rem 0.35rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  font: 500 0.72rem var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.codebox.prompt { border-color: transparent; background: linear-gradient(var(--code-bg), var(--code-bg)) padding-box, var(--grad-edge) border-box; }
+.codebox.prompt > header { color: var(--c-tool); }
+.codebox pre {
+  margin: 0;
+  padding: 0.9rem;
+  overflow-x: auto;
+  font: 0.82rem/1.6 var(--font-mono);
+  color: var(--ink);
+  tab-size: 2;
+}
+.codebox.prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.copy {
+  font: 500 0.72rem var(--font-body);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  background: var(--surface2);
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+.copy:hover { border-color: var(--muted); }
+
+/* ---------- buttons ---------- */
+
+.btn {
+  font: 600 0.9rem var(--font-body);
+  border-radius: 9px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border: 1px solid var(--line2);
+  background: var(--surface2);
+  color: var(--ink);
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--grad); border-color: transparent; color: #071019; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.controls { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.count { font: 500 0.8rem var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ---------- steps ---------- */
+
+.step { margin-top: 3.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); }
+.step > header { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-bottom: 0.9rem; }
+.step > header h2 { margin: 0; flex: 1 1 12rem; min-width: 0; }
+.num {
+  font: 600 0.95rem var(--font-mono);
+  width: 2.1rem;
+  height: 2.1rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--grad);
+  color: #071019;
+}
+.tick { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--muted); cursor: pointer; }
+.tick input { width: 1rem; height: 1rem; accent-color: var(--c-ok); }
+.step.is-done .num { background: var(--c-ok); }
+
+.lab {
+  font: 600 0.75rem var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 1.5rem 0 0.4rem;
+}
+
+/* step track: nine dots in three groups */
+.track { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin: 1rem 0 1.25rem; }
+.track .grp { border: 1px solid var(--line); border-radius: 12px; padding: 0.6rem 0.7rem 0.7rem; background: var(--surface); min-width: 0; }
+.track .grp > span { display: block; font: 500 0.7rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+.track .dots { display: flex; gap: 0.4rem; }
+.track a {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 9px;
+  padding: 0.35rem 0.2rem 0.4rem;
+  background: var(--surface2);
+  border: 1px solid var(--line2);
+  color: var(--ink);
+}
+.track a b { display: block; font: 600 0.95rem var(--font-mono); }
+.track a i { display: block; font-style: normal; font-size: 0.7rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.track a:hover { border-color: var(--c-code); }
+.track a.is-done { border-color: var(--c-ok); background: var(--c-ok-s); }
+.track a.is-done b::after { content: " ✓"; color: var(--c-ok); }
+.track .grp.core { border-color: transparent; background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--grad-edge) border-box; }
+@media (max-width: 34rem) { .track { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- step index ---------- */
+
+.steplist { list-style: none; padding: 0; margin: 0 0 1rem; border-top: 1px solid var(--line); }
+.steplist li {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 9rem) minmax(0, 1fr);
+  gap: 0.2rem 0.75rem;
+  padding: 0.55rem 0;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+  align-items: baseline;
+}
+.steplist .n { font: 500 0.85rem var(--font-mono); color: var(--muted); }
+.steplist a { font-weight: 600; text-decoration: none; }
+.steplist a:hover { text-decoration: underline; }
+.steplist span.d { color: var(--muted); font-size: 0.92rem; }
+.steplist li.is-done .n::after { content: " ✓"; color: var(--c-ok); }
+@media (max-width: 34rem) {
+  .steplist li { grid-template-columns: 1.6rem minmax(0, 1fr); }
+  .steplist span.d { grid-column: 2; }
+}
+
+/* ---------- phase list ---------- */
+
+.phases { list-style: none; padding: 0; margin: 0 0 1rem; border-top: 1px solid var(--line); }
+.phases li {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
+  gap: 0.1rem 0.75rem;
+  padding: 0.7rem 0;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+  align-items: baseline;
+}
+.phases .n { font: 500 0.85rem var(--font-mono); color: var(--muted); }
+.phases .t { font-weight: 600; }
+.phases .q { grid-column: 2 / -1; color: var(--muted); font-size: 0.94rem; }
+.phases a { text-decoration: none; }
+.phases a:hover { text-decoration: underline; }
+
+/* ---------- stack diagram (start page) ---------- */
+
+.stack { display: grid; gap: 0; }
+.stack .row {
+  display: grid;
+  grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr);
+  gap: 0.1rem 1rem;
+  align-items: baseline;
+  background: var(--surface2);
+  border: 1.2px solid var(--line2);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+}
+.stack .row b { font: 600 0.88rem var(--font-mono); }
+.stack .row span { font-size: 0.94rem; color: var(--muted); }
+.stack .row.out { background: transparent; border-style: dashed; border-color: var(--faint); }
+.stack .row.code { background: var(--c-code-s); border-color: var(--c-code); }
+.stack .row.model { background: var(--c-model-s); border-color: var(--c-model); border-style: dashed; }
+.stack .arrow { text-align: center; color: var(--muted); font: 0.78rem/1.9 var(--font-mono); }
+@media (max-width: 30rem) { .stack .row { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- notes ---------- */
+
+.note {
+  margin: 1rem 0 1.25rem;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  background: var(--c-data-s);
+  border: 1px solid rgba(255, 197, 110, 0.35);
+  font-size: 0.95rem;
+}
+.note > :last-child { margin-bottom: 0; }
+.note b:first-child { color: var(--c-data); }
+
+/* in / out comparison lists */
+.inout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; }
+.inout > div { border-radius: 10px; padding: 0.75rem 0.9rem; border: 1.2px solid; min-width: 0; }
+.inout .yes { border-color: var(--c-ok); background: var(--c-ok-s); }
+.inout .no { border-color: var(--faint); border-style: dashed; }
+.inout h4 { margin: 0 0 0.4rem; font: 600 0.75rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.inout .yes h4 { color: var(--c-ok); }
+.inout .no h4 { color: var(--muted); }
+.inout ul { margin: 0; padding-left: 1.1rem; font-size: 0.92rem; }
+@media (max-width: 34rem) { .inout { grid-template-columns: minmax(0, 1fr); } }
+
+/* small cards in a row */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 0.7rem; margin: 1rem 0 1.25rem; }
+.cards.five { grid-template-columns: repeat(auto-fit, minmax(7.2rem, 1fr)); }
+.cards > div { border: 1px solid var(--line2); background: var(--surface); border-radius: 12px; padding: 0.75rem 0.85rem; min-width: 0; }
+.cards b { display: block; font: 600 0.95rem var(--font-head); margin-bottom: 0.15rem; }
+.cards span { font-size: 0.88rem; color: var(--muted); }
+.cards .k { display: block; font: 500 0.7rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-tool); margin-bottom: 0.3rem; }
+
+/* ---------- loop player ---------- */
+
+.player { display: grid; gap: 0.9rem; }
+.player .cap { margin: 0; min-height: 4.9em; padding: 0.75rem 0.95rem; border-radius: 10px; background: var(--c-code-s); border: 1px solid rgba(114, 172, 255, 0.35); }
+.msgs { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+.msgs li {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 5.4rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--code-bg);
+  font-size: 0.86rem;
+}
+.msgs .r { font: 600 0.7rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.msgs li.assistant { border-color: var(--c-model); background: var(--c-model-s); }
+.msgs li.assistant .r { color: var(--c-model); }
+.msgs li.tool { border-color: var(--c-tool); background: var(--c-tool-s); }
+.msgs li.tool .r { color: var(--c-tool); }
+.msgs li.user .r { color: var(--ink); }
+.msgs li.pinned { border-style: dashed; }
+.msgs li.fresh { box-shadow: 0 0 0 1px var(--ink); }
+.msgs code { background: none; padding: 0; }
+.msgs-h { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font: 600 0.75rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+
+/* ---------- harness-grows widget ---------- */
+
+.phasebar { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.phasebar button {
+  font: 600 0.85rem var(--font-mono);
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 50%;
+  border: 1px solid var(--line2);
+  background: var(--surface2);
+  color: var(--ink);
+  cursor: pointer;
+}
+.phasebar button[aria-pressed="true"] { background: var(--grad); border-color: transparent; color: #071019; }
+.grow .comp { transition: opacity 0.25s; }
+.grow .comp.off { opacity: 0.16; }
+.grow .comp.new .b { stroke: var(--c-ok); stroke-width: 2.4; fill: var(--c-ok-s); }
+.growcap { margin: 0.75rem 0 0; min-height: 3.3em; }
+.growcap b { color: var(--c-ok); }
+
+/* ---------- quiz ---------- */
+
+.quiz { display: grid; gap: 1rem; margin: 1rem 0; }
+.quiz fieldset { margin: 0; border: 1px solid var(--line2); border-radius: 12px; padding: 0.9rem 1rem 1rem; background: var(--surface); min-width: 0; }
+.quiz legend { font-weight: 600; padding: 0 0.4rem; }
+.quiz .opts { display: grid; gap: 0.4rem; margin-top: 0.5rem; }
+.quiz .opts button {
+  text-align: left;
+  font: 0.94rem/1.45 var(--font-body);
+  color: var(--ink);
+  background: var(--surface2);
+  border: 1px solid var(--line2);
+  border-radius: 9px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+.quiz .opts button:hover { border-color: var(--muted); }
+.quiz .opts button.right { border-color: var(--c-ok); background: var(--c-ok-s); }
+.quiz .opts button.wrong { border-color: var(--c-risk); background: var(--c-risk-s); }
+.quiz .why { margin: 0.7rem 0 0; font-size: 0.92rem; color: var(--muted); }
+.quiz .why b { color: var(--ink); }
+.score { font: 600 0.85rem var(--font-mono); color: var(--muted); }
+
+/* ---------- tables ---------- */
+
+.tw { overflow-x: auto; margin: 0.75rem 0 1.25rem; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.75rem 0.55rem 0; border-bottom: 1px solid var(--line); }
+th { font: 500 0.72rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+td:first-child { font-weight: 600; }
+
+/* ---------- glossary ---------- */
+
+dl.terms { margin: 0 0 1rem; display: grid; grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr); gap: 0; border-top: 1px solid var(--line); }
+dl.terms dt, dl.terms dd { margin: 0; padding: 0.55rem 0; border-bottom: 1px solid var(--line); }
+dl.terms dt { font-weight: 600; padding-right: 0.75rem; }
+dl.terms dd { font-size: 0.95rem; color: var(--muted); }
+@media (max-width: 30rem) {
+  dl.terms { grid-template-columns: minmax(0, 1fr); }
+  dl.terms dt { border-bottom: 0; padding-bottom: 0; }
+  dl.terms dd { padding-top: 0.15rem; }
+}
+
+/* ---------- phase blocks on the roadmap ---------- */
+
+.phase { margin-top: 3.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); }
+.phase > header { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-bottom: 0.75rem; }
+.phase > header h2 { margin: 0; }
+.facts { margin: 0 0 1rem; display: grid; grid-template-columns: minmax(0, 7rem) minmax(0, 1fr); gap: 0.55rem 1rem; }
+.facts dt { font: 600 0.75rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding-top: 0.25rem; }
+.facts dd { margin: 0; }
+@media (max-width: 30rem) {
+  .facts { grid-template-columns: minmax(0, 1fr); gap: 0.1rem; }
+  .facts dd { margin-bottom: 0.6rem; }
+}
+
+/* ---------- prev / next ---------- */
+
+.pager {
+  margin-top: 4rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+}
+.pager a { text-decoration: none; font-weight: 600; }
+.pager a:hover { text-decoration: underline; }
+.pager .lbl { display: block; font: 500 0.72rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+
+@media (max-width: 30rem) {
+  h1 { font-size: 1.95rem; }
+  h2 { font-size: 1.25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .grow .comp { transition: none; }
+}
+</style>
+</head>
+<body data-page="phase-1">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk "/></marker><marker id="ah-model" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk model"/></marker><marker id="ah-code" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk code"/></marker><marker id="ah-tool" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk tool"/></marker><marker id="ah-data" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk data"/></marker><marker id="ah-risk" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk risk"/></marker><marker id="ah-ok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk ok"/></marker></defs></svg>
+
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html">Harness Handbook</a>
+  <nav aria-label="Chapters">
+    <a href="index.html">Start here</a>
+    <a href="how-it-works.html">How it works</a>
+    <a href="phase-0-bot.html">Phase 0</a>
+    <a href="phase-1-agent-loop.html" aria-current="page">Phase 1</a>
+    <a href="roadmap.html">Roadmap</a>
+  </nav>
+</div></div>
+
+<main class="wrap">
+
+<p class="eyebrow">Phase 1 <span class="chip next">You are here</span></p>
+<h1>Make it an agent</h1>
+<p class="lede">Today the bot can only talk. By the end of this phase it can act. It picks which of its tools to use, runs them and tells you what it did. You learn what an agent is by building one.</p>
+
+<h2>What you are building</h2>
+<div class="duo"><figure class="fig"><div class="in"><p class="figtitle">Today</p><div class="dgwrap"><svg class="dg sm" viewBox="0 0 330 226" role="img" aria-label="Today: your message goes to the handler, to the model and straight back. No memory, no tools, nothing saved."><g><rect x="10" y="70" width="76" height="48" rx="10" class="b "/><text x="48.0" y="98.5" class="t" text-anchor="middle">You</text></g><g><rect x="127" y="70" width="76" height="48" rx="10" class="b code"/><text x="165.0" y="98.5" class="t" text-anchor="middle">Handler</text></g><g><rect x="244" y="70" width="76" height="48" rx="10" class="b model"/><text x="282.0" y="98.5" class="t" text-anchor="middle">Model</text></g><path d="M86,86 L124,86" class="ln" marker-end="url(#ah)"/><path d="M203,86 L241,86" class="ln" marker-end="url(#ah)"/><path d="M244,104 L206,104" class="ln" marker-end="url(#ah)"/><path d="M127,104 L89,104" class="ln" marker-end="url(#ah)"/><text x="165" y="158" class="ts risk" text-anchor="middle">✕ no memory</text><text x="165" y="176" class="ts risk" text-anchor="middle">✕ no tools</text><text x="165" y="194" class="ts risk" text-anchor="middle">✕ nothing saved</text><text x="165" y="46" class="ts" text-anchor="middle">one trip, there and back</text></svg></div><figcaption>One trip to the model and back.</figcaption></div></figure><figure class="fig"><div class="in"><p class="figtitle">After Phase 1</p><div class="dgwrap"><svg class="dg sm" viewBox="0 0 330 226" role="img" aria-label="After Phase 1: a loop sits between you and the model. It goes back and forth with the model and runs tools, which save to tables."><g><rect x="10" y="40" width="70" height="44" rx="10" class="b "/><text x="45.0" y="66.5" class="t" text-anchor="middle">You</text></g><g><rect x="125" y="40" width="86" height="44" rx="10" class="b code"/><text x="168.0" y="66.5" class="t" text-anchor="middle">Loop</text></g><g><rect x="250" y="40" width="70" height="44" rx="10" class="b model"/><text x="285.0" y="66.5" class="t" text-anchor="middle">Model</text></g><path d="M80,54 L122,54" class="ln" marker-end="url(#ah)"/><path d="M125,70 L83,70" class="ln" marker-end="url(#ah)"/><path d="M211,54 L247,54" class="ln model" marker-end="url(#ah-model)"/><path d="M250,70 L214,70" class="ln model" marker-end="url(#ah-model)"/><g><rect x="125" y="118" width="86" height="40" rx="10" class="b tool"/><text x="168.0" y="142.5" class="t" text-anchor="middle">Tools</text></g><path d="M156,84 L156,115" class="ln tool" marker-end="url(#ah-tool)"/><path d="M180,118 L180,87" class="ln tool" marker-end="url(#ah-tool)"/><g><rect x="115" y="184" width="106" height="34" rx="10" class="b data"/><text x="168.0" y="205.5" class="t" text-anchor="middle">ea.db tables</text></g><path d="M168,158 L168,181" class="ln data" marker-end="url(#ah-data)"/><text x="226" y="126" class="ts ok" text-anchor="start">✓ memory</text><text x="226" y="144" class="ts ok" text-anchor="start">✓ four tools</text><text x="226" y="162" class="ts ok" text-anchor="start">✓ saved to tables</text><text x="231" y="26" class="ts" text-anchor="middle">as many trips as it needs</text></svg></div><figcaption>The loop goes round until the job is done.</figcaption></div></figure></div>
+<p><strong>Today.</strong> You send a message. The bot passes it to the model with one line of instructions and sends back whatever the model says. It has no memory of your previous message. Tell it what you ate and it may answer "Noted", but nothing is saved anywhere.</p>
+<p><strong>After Phase 1.</strong> You send one message:</p>
+<div class="codebox">
+  <header>You, in Telegram</header>
+  <pre>had dal and rice for lunch, did 2h of AI study, how am I doing on my AI learning goal?</pre>
+</div>
+<p>The EA saves the meal, saves the two hours, looks up your goal and replies with where you stand. One command then prints every step it took:</p>
+<div class="codebox">
+  <header>Example · your numbers will differ</header>
+  <pre>$ python -m core.events trace last
+
+#412 message    had dal and rice for lunch, did 2h of AI study, how am I…
+  #413 model    1.8s    912 in   64 out   asked for 2 tools
+    #414 tool   log_food(description="dal and rice", meal="lunch")
+                → Saved: lunch, dal and rice
+    #415 tool   log_time(minutes=120, category="ai-learning")
+                → Saved: 120 min, ai-learning
+  #416 model    1.1s   1040 in   18 out   asked for 1 tool
+    #417 tool   review_goals()
+                → ai-learning: 120 of 600 min this week
+  #418 model    2.0s   1123 in   41 out   answered
+  #419 reply    Logged lunch and 2h of study. You are at 2h of your 10h…
+
+3 model calls · 3 tool calls · 3,198 tokens · 4.9s</pre>
+</div>
+<p>That message is the <strong>exit test</strong> for this phase. When it passes three times in a row, Phase 1 is done.</p>
+
+<h2>The one idea: a loop</h2>
+<p>Simon Willison's definition is the shortest accurate one: "An LLM agent runs tools in a loop to achieve a goal" (<a href="https://simonwillison.net/2025/Sep/18/agents/">his post</a>). Model, tools, loop. You already have the model. This phase adds the other two.</p>
+
+<ol>
+  <li>The harness sends the model your message, along with a list of the tools it may ask for.</li>
+  <li>The model replies in one of two ways: ordinary text, or a request to run a tool.</li>
+  <li>If it asked for a tool, the harness runs the matching Python function and sends the result back to the model as another message. Go back to 2.</li>
+  <li>When the model replies with text, the loop ends and you get the reply.</li>
+</ol>
+<p>The model never runs anything. It only writes a request, and your code decides whether to carry it out. The whole of Phase 4 (security) rests on that fact.</p>
+<h3>Play one message through the loop</h3>
+<p>This is the exit-test message. Press Next and watch two things: which part of the loop is active, and what the model is sent.</p>
+<figure class="fig"><div class="in"><div class="player" id="player"><div class="controls"><button class="btn" id="lp-back" type="button">Back</button><button class="btn primary" id="lp-next" type="button">Next</button><button class="btn" id="lp-reset" type="button">Reset</button><span class="count" id="lp-count">step 0 of 6</span></div><p class="cap" id="lp-cap" aria-live="polite">Press Next to follow the exit-test message through the loop. The harness has built the list of messages below and is about to make the first model call.</p></div><div class="dgwrap"><svg class="dg" viewBox="0 0 680 292" role="img" aria-label="The agent loop. Your message goes to the model. If the model asked for a tool, the harness checks policy, runs it, adds the result to the messages and calls the model again. If the model answered in text, that text is the reply."><g id="lp-msg"><rect x="20" y="118" width="116" height="54" rx="10" class="b "/><text x="78.0" y="149.5" class="t" text-anchor="middle">Your message</text></g><g id="lp-model"><rect x="196" y="118" width="124" height="54" rx="10" class="b model"/><text x="258.0" y="142.0" class="t" text-anchor="middle">Model</text><text x="258.0" y="157.0" class="ts" text-anchor="middle">reads the messages</text></g><g id="lp-ask"><polygon points="366,145 428,103 490,145 428,187" class="b code"/><text x="428" y="142" class="t" text-anchor="middle">Asked for</text><text x="428" y="157" class="t" text-anchor="middle">a tool?</text></g><g id="lp-tool"><rect x="540" y="118" width="124" height="54" rx="10" class="b tool"/><text x="602.0" y="142.0" class="t" text-anchor="middle">Run the tool</text><text x="602.0" y="157.0" class="ts" text-anchor="middle">after a policy check</text></g><g id="lp-reply"><rect x="366" y="238" width="124" height="44" rx="10" class="b "/><text x="428.0" y="264.5" class="t" text-anchor="middle">Reply to you</text></g><path d="M136,145 L193,145" class="ln" marker-end="url(#ah)"/><path d="M320,145 L363,145" class="ln model" marker-end="url(#ah-model)"/><path d="M490,145 L537,145" class="ln code" marker-end="url(#ah-code)"/><text x="513" y="137" class="tl code" text-anchor="middle">yes</text><path d="M428,187 L428,235" class="ln code" marker-end="url(#ah-code)"/><text x="438" y="216" class="tl code" text-anchor="start">no, it answered in text</text><path d="M602,118 L602,54 L258,54 L258,115" class="ln tool" marker-end="url(#ah-tool)"/><text x="430" y="46" class="tl tool" text-anchor="middle">the result is added to the messages</text><text x="430" y="76" class="ts" text-anchor="middle">at most six times round</text></svg></div><p class="msgs-h" style="margin-top:0.9rem"><span>What the model is sent</span><span id="lp-calls">model calls: 0 of 6 allowed</span></p><ol class="msgs" id="lp-msgs"><li class="pinned"><span class="r">attached</span><span>The four tool descriptions, sent with every call</span></li><li><span class="r">system</span><span>The EA's instructions, plus your goal categories: <code>ai-learning</code></span></li><li><span class="r">history</span><span>Your last ten turns</span></li><li class="user"><span class="r">user</span><span>had dal and rice for lunch, did 2h of AI study, how am I doing on my AI learning goal?</span></li></ol><figcaption><b>Step through it.</b> Watch the list grow. The model has no memory, so every call gets the whole list again, including its own earlier tool requests and their results.</figcaption></div></figure>
+
+<h3>What a tool call looks like</h3>
+<p>Three small pieces of JSON go back and forth. They are simplified here. You will see the real ones in step 3.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 230" role="img" aria-label="Sequence. One, the harness sends messages and tool descriptions to the model. Two, the model replies with a tool call. The harness runs the function on your Mac. Three, the harness sends the result back."><path d="M170,46 L170,224" class="ln dash"/><path d="M510,46 L510,224" class="ln dash"/><g><rect x="70" y="10" width="200" height="36" rx="10" class="b code"/><text x="170.0" y="32.5" class="t" text-anchor="middle">Harness, on your Mac</text></g><g><rect x="410" y="10" width="200" height="36" rx="10" class="b model"/><text x="510.0" y="32.5" class="t" text-anchor="middle">Model, at the provider</text></g><path d="M170,82 L507,82" class="ln code" marker-end="url(#ah-code)"/><text x="340" y="74" class="tl code" text-anchor="middle">1 · messages + tool descriptions</text><path d="M510,122 L173,122" class="ln model" marker-end="url(#ah-model)"/><text x="340" y="114" class="tl model" text-anchor="middle">2 · tool_calls: log_food(…)</text><g><rect x="96" y="142" width="148" height="34" rx="10" class="b tool"/><text x="170.0" y="163.5" class="t tm" text-anchor="middle">runs log_food()</text></g><path d="M170,204 L507,204" class="ln tool" marker-end="url(#ah-tool)"/><text x="340" y="196" class="tl tool" text-anchor="middle">3 · role tool: &quot;Saved: lunch, dal and rice&quot;</text></svg></div><figcaption><b>One tool call, three messages.</b> The numbers match the three pieces of JSON below. Only the harness ever runs the function.</figcaption></div></figure>
+<div class="codebox">
+  <header>1 · The harness describes a tool to the model</header>
+  <pre>{ "name": "log_food",
+  "description": "Save something the user ate or drank.",
+  "parameters": { "description": "string",
+                  "meal": "breakfast | lunch | dinner | snack" } }</pre>
+</div>
+<div class="codebox">
+  <header>2 · The model asks for it</header>
+  <pre>{ "role": "assistant", "content": null,
+  "tool_calls": [ { "id": "call_1",
+      "function": { "name": "log_food",
+        "arguments": "{\"description\": \"dal and rice\", \"meal\": \"lunch\"}" } } ] }</pre>
+</div>
+<div class="codebox">
+  <header>3 · The harness runs it and reports back</header>
+  <pre>{ "role": "tool", "tool_call_id": "call_1",
+  "content": "Saved: lunch, dal and rice" }</pre>
+</div>
+<p>The description in piece 1 is the only thing the model knows about your tool. Writing it well is prompt writing.</p>
+
+<h2>Before you start</h2>
+<h3>1. Read one thing</h3>
+<p><a href="https://www.anthropic.com/engineering/building-effective-agents">Building effective agents</a> by Anthropic, about 20 minutes. Read it for two things: the difference between a <em>workflow</em> (your code decides the steps) and an <em>agent</em> (the model decides the steps), and its advice to keep the design simple.</p>
+<p class="small">If you want more: Barry Zhang's talk <a href="https://www.youtube.com/watch?v=D7_ipDqhtwk">How We Build Effective Agents</a> covers the same ground on video. Thorsten Ball's <a href="https://ampcode.com/how-to-build-an-agent">How to Build an Agent</a> builds this same loop in Go. Read it for the shape and ignore the language.</p>
+
+<h3>2. Check the bot still runs</h3>
+<div class="codebox">
+  <header>Terminal, in the repo folder</header>
+  <pre>source .venv/bin/activate
+pytest -q
+caffeinate -s python main.py</pre>
+</div>
+<p><code>pytest</code> should say <code>2 passed</code>. Send "hi" in Telegram and you should get a reply. Stop the bot with Ctrl-C.</p>
+
+<h3>3. Check your model can use tools</h3>
+<p>Not every model can, and on OpenRouter it also depends on which provider serves it. Open the <a href="https://openrouter.ai/models?supported_parameters=tools">list of models that support tools</a> and confirm yours is there. Today that is <code>meta-llama/llama-3.3-70b-instruct</code>. If it is missing, or step 3 fails, pick another open-weight model from that list. After step 1 that is a one-line change in <code>config.py</code>.</p>
+
+<h2>How every step works</h2>
+<ol>
+  <li>Open a new Claude Code session in the repo.</li>
+  <li>Paste the step's prompt.</li>
+  <li>Claude Code writes the tests and the code, shows you the diff and the test output, and stops.</li>
+  <li>Work through <strong>Read the diff</strong>. Ask Claude Code about anything you cannot explain. "Why did you do it this way?" is a good question.</li>
+  <li>Run the <strong>Check</strong> yourself.</li>
+  <li>Commit, then tick the step off on this page.</li>
+</ol>
+<div class="codebox">
+  <header>Commit after each step</header>
+  <pre>git add -A &amp;&amp; git commit -m "phase 1 step N: name of the step"</pre>
+</div>
+<p>If a check fails, stay in the same session and tell Claude Code what you saw. Do not start the next step on top of a failing one.</p>
+
+<h2>The nine steps</h2>
+<div class="track" aria-label="The nine steps in three groups"><div class="grp"><span>Get the ground ready</span><div class="dots"><a href="#s0" data-step="s0"><b>0</b><i>Commit</i></a><a href="#s1" data-step="s1"><b>1</b><i>Files</i></a><a href="#s2" data-step="s2"><b>2</b><i>History</i></a></div></div><div class="grp core"><span>The agent appears</span><div class="dots"><a href="#s3" data-step="s3"><b>3</b><i>Tools</i></a><a href="#s4" data-step="s4"><b>4</b><i>Loop</i></a><a href="#s5" data-step="s5"><b>5</b><i>EA tools</i></a></div></div><div class="grp"><span>Safe, readable, done</span><div class="dots"><a href="#s6" data-step="s6"><b>6</b><i>Policy</i></a><a href="#s7" data-step="s7"><b>7</b><i>Trace</i></a><a href="#s8" data-step="s8"><b>8</b><i>Ship</i></a></div></div></div>
+<ol class="steplist">
+  <li data-step="s0"><span class="n">0</span><a href="#s0">Safety net</a><span class="d">Commit what you have and write the project rules.</span></li>
+  <li data-step="s1"><span class="n">1</span><a href="#s1">Restructure</a><span class="d">Move each file to its home. Nothing changes for you as the user.</span></li>
+  <li data-step="s2"><span class="n">2</span><a href="#s2">History</a><span class="d">The bot remembers the last few messages.</span></li>
+  <li data-step="s3"><span class="n">3</span><a href="#s3">Tool contract</a><span class="d">Define what a tool is. Teach the gateway to offer tools to the model.</span></li>
+  <li data-step="s4"><span class="n">4</span><a href="#s4">Loop</a><span class="d">The agent loop itself.</span></li>
+  <li data-step="s5"><span class="n">5</span><a href="#s5">EA tools</a><span class="d">Food, time and goals.</span></li>
+  <li data-step="s6"><span class="n">6</span><a href="#s6">Policy</a><span class="d">One check before any tool runs.</span></li>
+  <li data-step="s7"><span class="n">7</span><a href="#s7">Trace</a><span class="d">One command prints a whole run.</span></li>
+  <li data-step="s8"><span class="n">8</span><a href="#s8">Ship</a><span class="d">Exit test, write-up, tag.</span></li>
+</ol>
+<p>Steps 0 to 2 get the ground ready. The agent appears in steps 3 to 5. Steps 6 to 8 make it safe, readable and finished.</p>
+
+<!-- ============ STEP 0 ============ -->
+<section class="step" id="s0">
+  <header><span class="num">0</span><h2>Safety net</h2><label class="tick"><input type="checkbox" id="done-s0"> Done</label></header>
+  <p>You want a starting point you can always get back to. At the moment <code>test_leaks.py</code> has never been committed and macOS <code>.DS_Store</code> files are in the repo. You also write <code>CLAUDE.md</code>, the rules file Claude Code reads at the start of every session, so you do not have to repeat the rules in every prompt.</p>
+  <p>Do this step by hand. It is one file and a few commands.</p>
+
+  <p class="lab">Create this file</p>
+  <div class="codebox">
+    <header>CLAUDE.md, in the repo root</header>
+    <pre># PehlaHarness
+
+A personal agent harness. The plan for the current phase is in
+Artifcats/phase-1-agent-loop.html.
+
+## Layout
+- channels/  how messages get in and out (Telegram)
+- agents/    one folder per agent; each owns its prompts, tools and tables
+- core/      shared machinery: gateway, loop, tools, policy, events
+- tests/     pytest
+- docs/      decision records and write-ups
+
+## Rules
+- core never imports from agents or channels. Agents never import each other.
+- Every model call goes through core/gateway. Nothing else talks to a model.
+- Every tool run goes through core/policy first.
+- Secrets come from keyring only. Never print, log or commit them.
+- ea.db, allowed_id.txt and private/ are never committed.
+
+## How we work
+- One step per session. Do only the step I name.
+- Write or update the tests first. Tests never call the network.
+- Keep it small and plain: functions over classes, no new dependencies
+  unless I agree.
+- When done, show me the diff and the pytest output, then stop. I commit.
+- If the step is unclear or needs a decision, ask before writing code.</pre>
+  </div>
+
+  <p class="lab">Then run</p>
+  <div class="codebox">
+    <header>Terminal</header>
+    <pre>printf ".DS_Store\n.pytest_cache/\nprivate/\n" &gt;&gt; .gitignore
+printf "httpx\nkeyring\npytest\n" &gt; requirements.txt
+mkdir -p private
+git rm --cached Artifcats/.DS_Store
+git add -A
+git commit -m "v0: tests, ignore rules, CLAUDE.md"
+git tag v0
+git push &amp;&amp; git push --tags</pre>
+  </div>
+  <p class="small"><code>private/</code> is a folder git ignores. You will keep notes with real messages in it. <code>git tag v0</code> puts a name on this commit so you can always return to the working bot.</p>
+
+  <p class="lab">Check</p>
+  <ul>
+    <li><code>git status</code> says the working tree is clean.</li>
+    <li><code>pytest -q</code> says <code>2 passed</code>.</li>
+    <li><code>git ls-files</code> lists no <code>ea.db</code>, no <code>allowed_id.txt</code> and no <code>.DS_Store</code>.</li>
+  </ul>
+</section>
+
+<!-- ============ STEP 1 ============ -->
+<section class="step" id="s1">
+  <header><span class="num">1</span><h2>Restructure</h2><label class="tick"><input type="checkbox" id="done-s1"> Done</label></header>
+  <p>Put each file where it will live for the rest of the project, so every later step has an obvious home. The bot must behave exactly as before.</p>
+  <p>The shape follows one rule. Machinery that every agent shares goes in <code>core/</code>. Each agent gets its own folder. <code>core/</code> never looks inside an agent. In Phase 6 that rule lets you add a second agent without touching the first.</p>
+  <figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 316" role="img" aria-label="File map. main.py becomes channels/telegram.py, and the part that calls the model becomes agents/ea/agent.py. egress.py becomes core/gateway.py. events.py becomes core/events.py. Channels import agents, agents import core, and core never imports agents."><text x="20" y="30" class="th" text-anchor="start">Today</text><text x="330" y="12" class="th" text-anchor="start">After step 1</text><g><rect x="20" y="52" width="120" height="36" rx="10" class="b "/><text x="80.0" y="74.5" class="t tm" text-anchor="middle">main.py</text></g><g><rect x="20" y="200" width="120" height="36" rx="10" class="b "/><text x="80.0" y="222.5" class="t tm" text-anchor="middle">egress.py</text></g><g><rect x="20" y="262" width="120" height="36" rx="10" class="b "/><text x="80.0" y="284.5" class="t tm" text-anchor="middle">events.py</text></g><rect x="330" y="20" width="250" height="66" rx="12" class="b band"/><text x="344" y="40" class="t tm code" text-anchor="start">channels/</text><rect x="330" y="98" width="250" height="98" rx="12" class="b band"/><text x="344" y="118" class="t tm code" text-anchor="start">agents/ea/</text><rect x="330" y="208" width="250" height="98" rx="12" class="b band"/><text x="344" y="228" class="t tm code" text-anchor="start">core/</text><g><rect x="440" y="46" width="130" height="30" rx="8" class="b code"/><text x="505.0" y="65.5" class="t tm" text-anchor="middle">telegram.py</text></g><g><rect x="440" y="124" width="130" height="28" rx="8" class="b code"/><text x="505.0" y="142.5" class="t tm" text-anchor="middle">agent.py</text></g><g><rect x="440" y="158" width="130" height="28" rx="8" class="b code"/><text x="505.0" y="176.5" class="t tm" text-anchor="middle">system.md</text></g><g><rect x="440" y="234" width="130" height="28" rx="8" class="b code"/><text x="505.0" y="252.5" class="t tm" text-anchor="middle">gateway.py</text></g><g><rect x="440" y="268" width="130" height="28" rx="8" class="b code"/><text x="505.0" y="286.5" class="t tm" text-anchor="middle">events.py</text></g><path d="M140,64 C290,64 290,61 437,61" class="ln" marker-end="url(#ah)"/><path d="M140,76 C290,76 290,138 437,138" class="ln dash" marker-end="url(#ah)"/><text x="286" y="146" class="tl" text-anchor="end">the part that calls the model</text><path d="M140,218 C290,218 290,248 437,248" class="ln" marker-end="url(#ah)"/><path d="M140,280 C290,280 290,282 437,282" class="ln" marker-end="url(#ah)"/><path d="M580,53 L604,53 L604,140 L583,140" class="ln ok" marker-end="url(#ah-ok)"/><path d="M580,164 L604,164 L604,250 L583,250" class="ln ok" marker-end="url(#ah-ok)"/><text x="612" y="100" class="tl ok" text-anchor="start">imports</text><text x="612" y="210" class="tl ok" text-anchor="start">imports</text><path d="M580,284 L664,284 L664,122 L583,122" class="ln risk dash" marker-end="url(#ah-risk)"/><text x="664" y="302" class="tl risk" text-anchor="end">✕ never</text></svg></div><figcaption><b>Imports only point downward.</b> A channel uses an agent, an agent uses the core. The core never reaches back up, and a test enforces it.</figcaption></div></figure>
+<div class="codebox">
+    <header>Where things go</header>
+    <pre>channels/
+  telegram.py            was main.py
+agents/
+  ea/
+    agent.py             new: how the EA answers one message
+    prompts/system.md    new: the EA's instructions
+core/
+  gateway.py             was egress.py
+  events.py              was events.py
+config.py                new: model name and file paths
+tests/
+  test_leaks.py          moved
+  test_imports.py        new: enforces the core rule</pre>
+  </div>
+  <p>This step also fixes two small bugs. The database and the allowlist file are opened by relative path, so starting the bot from another folder silently creates a second, empty database. And the model name is written inside the code, so you cannot swap models without editing it.</p>
+
+  <p class="lab">Give Claude Code this</p>
+  <div class="codebox prompt">
+    <header>Prompt</header>
+    <pre>Do Phase 1 step 1: restructure, with no behaviour change.
+
+Move, don't rewrite:
+- main.py       -&gt; channels/telegram.py
+- egress.py     -&gt; core/gateway.py
+- events.py     -&gt; core/events.py
+- test_leaks.py -&gt; tests/test_leaks.py
+
+Add:
+- config.py in the repo root holding MODEL, DB_PATH and ALLOWED_ID_PATH. Both paths are absolute, built from the repo root, so the bot works when started from any folder.
+- agents/ea/agent.py with one function, respond(text) -&gt; str. It logs the message, builds the messages list, calls the gateway, logs the reply and returns it. Its events use domain="ea".
+- agents/ea/prompts/system.md holding the system prompt, loaded by agent.py.
+- channels/telegram.py calls respond() and no longer imports the gateway.
+- tests/test_imports.py: fails if any file in core/ imports from agents or channels.
+- pytest config so that `pytest` works from the repo root.
+
+The bot now starts with: python -m channels.telegram
+
+Done means: the bot replies exactly as before, and pytest passes including the new import test.</pre>
+  </div>
+
+  <p class="lab">Read the diff</p>
+  <ul>
+    <li>Open <code>channels/telegram.py</code>. It should mention neither the model nor the gateway. Its only job is Telegram.</li>
+    <li>Open <code>config.py</code> and find how <code>DB_PATH</code> is built. It should start from the location of the file itself, which is what makes it work from any folder.</li>
+    <li>Open <code>tests/test_imports.py</code> and work out how it spots a forbidden import. Then break the rule on purpose: add <code>import agents</code> to the top of <code>core/events.py</code>, run <code>pytest</code>, watch it fail, and undo it. A rule you have seen fail is a rule you trust.</li>
+  </ul>
+
+  <p class="lab">Check</p>
+  <div class="codebox">
+    <header>Terminal</header>
+    <pre>pytest -q
+caffeinate -s python -m channels.telegram</pre>
+  </div>
+  <p>Send "hi" and get a reply. Then, in a second Terminal tab:</p>
+  <div class="codebox">
+    <header>Terminal</header>
+    <pre>sqlite3 ea.db "select id, kind, domain from events order by id desc limit 3"</pre>
+  </div>
+  <p>The newest <code>message</code> and <code>reply</code> rows should show <code>ea</code> in the last column.</p>
+</section>
+
+<!-- ============ STEP 2 ============ -->
+<section class="step" id="s2">
+  <header><span class="num">2</span><h2>History</h2><label class="tick"><input type="checkbox" id="done-s2"> Done</label></header>
+  <p>A model remembers nothing between calls. When a chat app seems to remember, the program around the model is sending the earlier messages again, every time. You are about to build that.</p>
+  <p>This is your first piece of <strong>context management</strong>: choosing what the model gets to see. More history means better answers and a bigger bill, because you pay for every token of history on every call. So you cap it.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 236" role="img" aria-label="Top: one model call contains the system prompt, the last ten turns and the new message. Older turns are left out. Bottom: prompt tokens rise with each message until the cap, then stay flat."><text x="20" y="20" class="th" text-anchor="start">What is sent on every call</text><rect x="20" y="34" width="26" height="44" rx="6" class="b out"/><rect x="52" y="34" width="26" height="44" rx="6" class="b out"/><rect x="84" y="34" width="26" height="44" rx="6" class="b out"/><text x="63" y="96" class="ts" text-anchor="middle">older turns: left out</text><g><rect x="128" y="34" width="112" height="44" rx="10" class="b code"/><text x="184.0" y="60.5" class="t" text-anchor="middle">System prompt</text></g><text x="184" y="96" class="ts" text-anchor="middle">the instructions</text><rect x="250" y="34" width="24" height="44" rx="6" class="b"/><rect x="278" y="34" width="24" height="44" rx="6" class="b"/><rect x="306" y="34" width="24" height="44" rx="6" class="b"/><rect x="334" y="34" width="24" height="44" rx="6" class="b"/><rect x="362" y="34" width="24" height="44" rx="6" class="b"/><rect x="390" y="34" width="24" height="44" rx="6" class="b"/><rect x="418" y="34" width="24" height="44" rx="6" class="b"/><rect x="446" y="34" width="24" height="44" rx="6" class="b"/><rect x="474" y="34" width="24" height="44" rx="6" class="b"/><rect x="502" y="34" width="24" height="44" rx="6" class="b"/><text x="388" y="96" class="ts" text-anchor="middle">the last 10 turns</text><g><rect x="540" y="34" width="120" height="44" rx="10" class="b "/><text x="600.0" y="60.5" class="t" text-anchor="middle">New message</text></g><text x="600" y="96" class="ts" text-anchor="middle">what you just sent</text><path d="M60,124 L60,212 L662,212" class="ln"/><path d="M60,204 L360,146 L654,146" class="ln data thick"/><path d="M360,128 L360,212" class="ln dash"/><text x="368" y="136" class="tl" text-anchor="start">the cap: turn 11 pushes turn 1 out</text><text x="68" y="134" class="ts" text-anchor="start">prompt tokens</text><text x="660" y="228" class="ts" text-anchor="end">messages you have sent</text></svg></div><figcaption><b>History is paid for on every call.</b> The line shows the shape only. Your real numbers are the <code>prompt_tokens</code> values in the Check below.</figcaption></div></figure>
+
+  <p class="lab">Give Claude Code this</p>
+  <div class="codebox prompt">
+    <header>Prompt</header>
+    <pre>Do Phase 1 step 2: conversation history.
+
+In agents/ea/agent.py, respond() sends the last 10 turns with each model call. A turn is one message from me plus the reply. Read them from the events table (kind "message" and "reply", domain "ea"), oldest first, and place them as user and assistant messages between the system prompt and the new message. Put the number in config.py as HISTORY_TURNS.
+
+Add a helper in core/events.py for reading recent events. The agent does not write SQL against the events table itself.
+
+Tests, using a temporary database: history comes back in the right order, is capped at HISTORY_TURNS, and ignores events from other domains.
+
+Done means: I tell the bot my name, then ask "what's my name?" in my next message, and it answers correctly.</pre>
+  </div>
+
+  <p class="lab">Read the diff</p>
+  <ul>
+    <li>Find where the messages list is built. The order should be: system prompt, old turns, new message.</li>
+    <li>Work out what happens to turn 11. It is left out. The bot forgets on purpose. Real long-term memory is Phase 5.</li>
+    <li>Look at how the tests get a temporary database. You will see the same trick in every later step, because tests must never touch your real <code>ea.db</code>.</li>
+  </ul>
+
+  <p class="lab">Check</p>
+  <p>Tell the bot your name. In the next message ask what your name is. Then look at what history costs:</p>
+  <div class="codebox">
+    <header>Terminal</header>
+    <pre>sqlite3 ea.db "select payload from events where kind='model_call' order by id desc limit 4"</pre>
+  </div>
+  <p>Find <code>prompt_tokens</code> in each row. It grows with every message you send, until the cap. That number is the reason for the cap.</p>
+</section>
+
+<!-- ============ STEP 3 ============ -->
+<section class="step" id="s3">
+  <header><span class="num">3</span><h2>Tool contract</h2><label class="tick"><input type="checkbox" id="done-s3"> Done</label></header>
+  <p>Before the model can use tools, the harness needs one agreed definition of what a tool is. That definition is the contract. In your harness a tool is four things:</p>
+  <ol>
+    <li>a <strong>name</strong>, such as <code>log_food</code></li>
+    <li>a <strong>description</strong> in plain English, saying what it does and when to use it</li>
+    <li>a <strong>schema</strong>: the arguments it takes and their types</li>
+    <li>a <strong>Python function</strong> that does the work</li>
+  </ol>
+  <p>The first three are sent to the model, which reads them like documentation. The fourth never leaves your Mac.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 206" role="img" aria-label="A tool has four parts. The name, description and schema are sent to the model with every call. The Python function stays on your Mac."><rect x="16" y="20" width="272" height="40" rx="8" class="b "/><text x="28" y="45" class="th" text-anchor="start">Name</text><text x="122" y="45" class="t tm" text-anchor="start">log_food</text><rect x="16" y="62" width="272" height="40" rx="8" class="b "/><text x="28" y="87" class="th" text-anchor="start">Description</text><text x="122" y="87" class="ts" text-anchor="start">Save something the user ate</text><rect x="16" y="104" width="272" height="40" rx="8" class="b "/><text x="28" y="129" class="th" text-anchor="start">Schema</text><text x="122" y="129" class="t tm" text-anchor="start">description, meal</text><rect x="16" y="146" width="272" height="40" rx="8" class="b tool"/><text x="28" y="171" class="th" text-anchor="start">Function</text><text x="122" y="171" class="t tm" text-anchor="start">def log_food(…)</text><path d="M296,24 L308,24 L308,140 L296,140" class="ln model"/><path d="M308,82 L447,72" class="ln model" marker-end="url(#ah-model)"/><text x="378" y="64" class="tl model" text-anchor="middle">sent with every call</text><path d="M288,166 L447,166" class="ln tool" marker-end="url(#ah-tool)"/><text x="368" y="158" class="tl tool" text-anchor="middle">never leaves</text><g><rect x="450" y="40" width="214" height="60" rx="10" class="b model"/><text x="557.0" y="67.0" class="t" text-anchor="middle">The model</text><text x="557.0" y="82.0" class="ts" text-anchor="middle">reads these like documentation</text></g><g><rect x="450" y="138" width="214" height="56" rx="10" class="b tool"/><text x="557.0" y="163.0" class="t" text-anchor="middle">Your Mac</text><text x="557.0" y="178.0" class="ts" text-anchor="middle">runs the function</text></g></svg></div><figcaption><b>Three parts are words for the model. One part is code for your Mac.</b> The model can only ever see the first three.</figcaption></div></figure>
+  <p>This step also changes the gateway. Until now it returned a string. From now on the model can answer in two ways, text or a request for tools, so the gateway returns the whole message. There is still no loop. You make one live call and look at what a tool request really is.</p>
+
+  <p class="lab">Give Claude Code this</p>
+  <div class="codebox prompt">
+    <header>Prompt</header>
+    <pre>Do Phase 1 step 3: the tool contract. No loop yet.
+
+core/tools.py:
+- A Tool has a name, a description, a JSON schema for its arguments, and a Python function.
+- A small registry: register a tool, look one up by name, and export a list of tools in the OpenAI-style format OpenRouter expects ({"type": "function", "function": {...}}).
+
+core/gateway.py:
+- ask() accepts an optional tools list and sends it with the request.
+- ask() returns the whole assistant message (a dict with content and, when present, tool_calls) instead of only the text. Update agents/ea/agent.py to match.
+- Add "require_parameters": true to the provider settings, so OpenRouter only routes to providers that support tools.
+- Redaction must handle every message shape: content that is None, and messages with role "tool". Tool results are redacted like any other outgoing text.
+- The model_call event also records how many tool calls the model asked for.
+- Fix a small bug while you are there: the card pattern also swallows the space after the number, so "4111 1111 1111 1111 and" becomes "[CARD]and". Add a test for it.
+
+Tests, with the HTTP call stubbed so nothing touches the network:
+- a fake tool exports to the right JSON shape
+- ask() returns tool_calls when the stubbed response contains them
+- redaction does not crash when content is None, and does redact a card number inside a tool message
+
+Also add scripts/try_tool.py: one live call offering a fake get_time tool with the question "what time is it?". It prints the raw assistant message.
+
+Done means: pytest passes, and scripts/try_tool.py prints an assistant message that contains a tool_calls entry for get_time.</pre>
+  </div>
+
+  <p class="lab">Read the diff</p>
+  <ul>
+    <li>In <code>core/tools.py</code>, find the JSON a tool is exported as. That text is exactly what the model sees.</li>
+    <li>In <code>core/gateway.py</code>, find <code>require_parameters</code>. Without it a provider that does not support tools may ignore them without any error, and your bot would quietly stop using tools.</li>
+    <li>Find the redaction change. Tool results will contain your food and your goals, and they are sent to the model like everything else. The one door out still covers them.</li>
+    <li>Run <code>python scripts/try_tool.py</code> and read the output slowly. <code>content</code> is empty. <code>arguments</code> is a string with JSON inside it, which your code has to parse. Each call has an <code>id</code>. And nothing ran: the model only asked.</li>
+  </ul>
+
+  <p class="lab">Check</p>
+  <div class="codebox">
+    <header>Terminal</header>
+    <pre>pytest -q
+python scripts/try_tool.py</pre>
+  </div>
+  <div class="note"><p><b>If the script prints ordinary text and no <code>tool_calls</code>:</b> the model chose not to use the tool, or no provider for it supports tools under your privacy settings. If you get a "no endpoints" error, it is the second one. Pick another model from the <a href="https://openrouter.ai/models?supported_parameters=tools">tools list</a> and change <code>MODEL</code> in <code>config.py</code>.</p></div>
+</section>
+
+<!-- ============ STEP 4 ============ -->
+<section class="step" id="s4">
+  <header><span class="num">4</span><h2>Loop</h2><label class="tick"><input type="checkbox" id="done-s4"> Done</label></header>
+  <p>This is the piece that makes it an agent, and the file from this phase you should know best. It is short.</p>
+  <ol>
+    <li>Call the model with the messages and the tool list.</li>
+    <li>If it answered in text, return the text. Finished.</li>
+    <li>If it asked for tools, run each one, add the results to the messages and go back to 1.</li>
+    <li>If this has gone round six times, stop anyway.</li>
+  </ol>
+  <p>Three rules keep the loop safe:</p>
+  <ul>
+    <li><strong>A step cap.</strong> A confused model can ask for tools forever. Every round costs money. Six is plenty for the EA.</li>
+    <li><strong>Errors go back to the model as text.</strong> If a tool crashes, the model is told what went wrong and can try again or tell you. One bad tool call should not take the bot down.</li>
+    <li><strong>Every step is logged.</strong> You cannot pause a model and step through it the way you debug code. The log is how you find out what happened.</li>
+  </ul>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 158" role="img" aria-label="Three safety rules: a cap of six rounds, tool errors returned to the model as text, and every step written to the log."><path d="M227,20 L227,150" class="ln"/><path d="M454,20 L454,150" class="ln"/><path d="M113,32 A30,30 0 1 1 87,47" class="ln code" marker-end="url(#ah-code)"/><text x="113" y="68" class="t" text-anchor="middle">6</text><text x="113" y="122" class="t" text-anchor="middle">A step cap</text><text x="113" y="140" class="ts" text-anchor="middle">six rounds, then stop</text><g><rect x="238" y="40" width="60" height="44" rx="10" class="b risk"/><text x="268.0" y="66.5" class="t" text-anchor="middle">Tool ✕</text></g><path d="M298,62 L381,62" class="ln risk" marker-end="url(#ah-risk)"/><text x="340" y="53" class="tl risk" text-anchor="middle">&quot;Error: …&quot;</text><g><rect x="384" y="40" width="60" height="44" rx="10" class="b model"/><text x="414.0" y="66.5" class="t" text-anchor="middle">Model</text></g><text x="340" y="122" class="t" text-anchor="middle">Errors go back as text</text><text x="340" y="140" class="ts" text-anchor="middle">the model can retry or tell you</text><rect x="497" y="24" width="140" height="20" rx="5" class="b data"/><text x="567" y="38" class="tm" text-anchor="middle">model_call</text><rect x="497" y="48" width="140" height="20" rx="5" class="b data"/><text x="567" y="62" class="tm" text-anchor="middle">tool_call</text><rect x="497" y="72" width="140" height="20" rx="5" class="b data"/><text x="567" y="86" class="tm" text-anchor="middle">reply</text><text x="567" y="122" class="t" text-anchor="middle">Every step is logged</text><text x="567" y="140" class="ts" text-anchor="middle">the log is your debugger</text></svg></div><figcaption><b>The three rules that keep a loop from hurting you.</b> Each one has a test in the prompt below.</figcaption></div></figure>
+
+  <p class="lab">Give Claude Code this</p>
+  <div class="codebox prompt">
+    <header>Prompt</header>
+    <pre>Do Phase 1 step 4: the agent loop.
+
+core/loop.py, one function: run(messages, tools, parent_id, max_steps) -&gt; str
+- Call the gateway with the messages and tools.
+- If the reply has no tool_calls, return its text.
+- Otherwise append the assistant message, run every requested tool, append one role "tool" message per call (with its tool_call_id), and call the gateway again.
+- If a tool raises, the tool name does not exist, or the arguments are not valid JSON: do not crash. Send the error back to the model as that tool's result so it can recover.
+- After max_steps model calls without a text answer, stop and return a short "I couldn't finish that" message.
+- Log each tool run as a tool_call event (name, arguments, result or error, seconds). Its parent is the model_call event that asked for it, so the gateway needs to hand back the id of the model_call event it logs.
+- Put MAX_STEPS = 6 in config.py.
+
+agents/ea/agent.py: respond() now calls loop.run(), with an empty tool list for now.
+channels/telegram.py: split a reply longer than 4096 characters into several messages. That is Telegram's limit.
+
+Tests, all against a stubbed gateway with no network:
+- a text answer on the first call is returned
+- one tool call, then text: the tool ran once and its result was in the second request
+- two tool calls in one reply: both run, and two tool messages are sent back
+- a tool that raises: the error text reaches the model and the loop continues
+- an unknown tool name: the same
+- a model that never stops asking: the loop ends after max_steps
+
+Done means: pytest passes and the bot still chats normally.</pre>
+  </div>
+
+  <p class="lab">Read the diff</p>
+  <p>Read <code>core/loop.py</code> from top to bottom until you could redraw it on paper. Then answer these:</p>
+  <ul>
+    <li>Where are the two places the loop stops?</li>
+    <li>After a tool runs, two kinds of message are added before the next model call. Which, and in which order? The model's own request has to be included, because the model has no memory. The next call must show it what it asked for and what came back.</li>
+    <li>What exactly does the model receive when a tool crashes?</li>
+    <li>What happens when the model asks for two tools in one reply?</li>
+  </ul>
+  <p>If <code>loop.py</code> is much longer than about 80 lines, or has grown classes, ask Claude Code to simplify it. Small is the point.</p>
+
+  <p class="lab">Check</p>
+  <div class="codebox">
+    <header>Terminal</header>
+    <pre>pytest -q
+caffeinate -s python -m channels.telegram</pre>
+  </div>
+  <p>Chat with the bot. It behaves as it did after step 2, because it has no tools yet. The loop is running with nothing to do.</p>
+</section>
+
+<!-- ============ STEP 5 ============ -->
+<section class="step" id="s5">
+  <header><span class="num">5</span><h2>EA tools</h2><label class="tick"><input type="checkbox" id="done-s5"> Done</label></header>
+  <p>The loop works. Now the EA gets something to do with it. Four small tools, each a plain Python function that reads or writes a table:</p>
+  <div class="tw"><table>
+    <thead><tr><th>Tool</th><th>Does</th><th>Table</th></tr></thead>
+    <tbody>
+      <tr><td><code>log_food</code></td><td>Saves something you ate, and which meal it was.</td><td><code>ea_food</code></td></tr>
+      <tr><td><code>log_time</code></td><td>Saves minutes spent on a category.</td><td><code>ea_time</code></td></tr>
+      <tr><td><code>set_goal</code></td><td>Sets a weekly target in minutes for a category.</td><td><code>ea_goals</code></td></tr>
+      <tr><td><code>review_goals</code></td><td>Compares each goal with the time logged in the last 7 days.</td><td>reads both</td></tr>
+    </tbody>
+  </table></div>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 226" role="img" aria-label="log_food writes to ea_food. log_time writes to ea_time. set_goal writes to ea_goals. review_goals reads ea_time and ea_goals."><text x="30" y="12" class="th" text-anchor="start">Tools · Python functions</text><text x="480" y="12" class="th" text-anchor="start">Tables · in ea.db</text><g><rect x="30" y="22" width="170" height="38" rx="10" class="b tool"/><text x="115.0" y="45.5" class="t tm" text-anchor="middle">log_food</text></g><g><rect x="30" y="74" width="170" height="38" rx="10" class="b tool"/><text x="115.0" y="97.5" class="t tm" text-anchor="middle">log_time</text></g><g><rect x="30" y="126" width="170" height="38" rx="10" class="b tool"/><text x="115.0" y="149.5" class="t tm" text-anchor="middle">review_goals</text></g><g><rect x="30" y="178" width="170" height="38" rx="10" class="b tool"/><text x="115.0" y="201.5" class="t tm" text-anchor="middle">set_goal</text></g><g><rect x="480" y="22" width="170" height="38" rx="10" class="b data"/><text x="565.0" y="45.5" class="t tm" text-anchor="middle">ea_food</text></g><g><rect x="480" y="74" width="170" height="38" rx="10" class="b data"/><text x="565.0" y="97.5" class="t tm" text-anchor="middle">ea_time</text></g><g><rect x="480" y="178" width="170" height="38" rx="10" class="b data"/><text x="565.0" y="201.5" class="t tm" text-anchor="middle">ea_goals</text></g><path d="M200,41 L477,41" class="ln tool" marker-end="url(#ah-tool)"/><text x="338" y="33" class="tl tool" text-anchor="middle">writes</text><path d="M200,93 L477,93" class="ln tool" marker-end="url(#ah-tool)"/><text x="400" y="85" class="tl tool" text-anchor="middle">writes</text><path d="M200,197 L477,197" class="ln tool" marker-end="url(#ah-tool)"/><text x="400" y="207" class="tl tool" text-anchor="middle">writes</text><path d="M200,138 L477,103" class="ln data dash" marker-end="url(#ah-data)"/><text x="300" y="118" class="tl data" text-anchor="middle">reads the last 7 days</text><path d="M200,152 L477,187" class="ln data dash" marker-end="url(#ah-data)"/><text x="300" y="172" class="tl data" text-anchor="middle">reads the targets</text></svg></div><figcaption><b>Three tools write, one reads.</b> <code>review_goals</code> is the only tool that needs two tables to agree with each other.</figcaption></div></figure>
+  <p>Three habits of good tool design show up here, and you will reuse them for every tool you ever write:</p>
+  <ul>
+    <li><strong>One tool, one job.</strong> Small models choose better between four clear tools than inside one tool with many modes.</li>
+    <li><strong>The description is a prompt.</strong> Say what the tool does and when to use it.</li>
+    <li><strong>Return a short sentence.</strong> The result goes back to the model, so write it for a reader: "Saved: lunch, dal and rice".</li>
+  </ul>
+  <div class="note"><p><b>A trap you would otherwise hit:</b> you set a goal for "AI learning", the model logs time under "ai study", and the review says you have done nothing. The names have to match. The prompt below handles it in two ways. Category names get a fixed format, and the EA is told the existing categories on every turn.</p></div>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 146" role="img" aria-label="Without the fix the goal is named ai-learning and the time entry ai study, so the review reports 0 of 600 minutes. With the fix both use ai-learning and the review reports 120 of 600."><text x="20" y="14" class="th" text-anchor="start">Without the fix</text><text x="370" y="14" class="th" text-anchor="start">With the fix</text><path d="M340,8 L340,140" class="ln"/><g><rect x="20" y="26" width="150" height="46" rx="10" class="b data"/><text x="95.0" y="46.0" class="t tm" text-anchor="middle">ai-learning</text><text x="95.0" y="61.0" class="ts" text-anchor="middle">the goal</text></g><g><rect x="20" y="88" width="150" height="46" rx="10" class="b data"/><text x="95.0" y="108.0" class="t tm" text-anchor="middle">ai study</text><text x="95.0" y="123.0" class="ts" text-anchor="middle">the time entry</text></g><g><rect x="214" y="54" width="110" height="52" rx="10" class="b risk"/><text x="269.0" y="77.0" class="t" text-anchor="middle">0 of 600</text><text x="269.0" y="92.0" class="ts" text-anchor="middle">names differ</text></g><path d="M170,49 L211,72" class="ln risk" marker-end="url(#ah-risk)"/><path d="M170,111 L211,88" class="ln risk" marker-end="url(#ah-risk)"/><g><rect x="370" y="26" width="150" height="46" rx="10" class="b data"/><text x="445.0" y="46.0" class="t tm" text-anchor="middle">ai-learning</text><text x="445.0" y="61.0" class="ts" text-anchor="middle">the goal</text></g><g><rect x="370" y="88" width="150" height="46" rx="10" class="b data"/><text x="445.0" y="108.0" class="t tm" text-anchor="middle">ai-learning</text><text x="445.0" y="123.0" class="ts" text-anchor="middle">the time entry</text></g><g><rect x="564" y="54" width="110" height="52" rx="10" class="b ok"/><text x="619.0" y="77.0" class="t" text-anchor="middle">120 of 600</text><text x="619.0" y="92.0" class="ts" text-anchor="middle">names match</text></g><path d="M520,49 L561,72" class="ln ok" marker-end="url(#ah-ok)"/><path d="M520,111 L561,88" class="ln ok" marker-end="url(#ah-ok)"/></svg></div><figcaption><b>The model picks the category name each time.</b> Unless it is told the existing names, it will invent a near miss.</figcaption></div></figure>
+
+  <p class="lab">Give Claude Code this</p>
+  <div class="codebox prompt">
+    <header>Prompt</header>
+    <pre>Do Phase 1 step 5: the EA's tools.
+
+agents/ea/tools.py, four tools registered through core/tools:
+- log_food(description, meal): meal is one of breakfast, lunch, dinner, snack. Saves a row to ea_food.
+- log_time(minutes, category, note): note is optional. Saves a row to ea_time.
+- set_goal(category, weekly_minutes, title): creates or updates a goal in ea_goals. One goal per category.
+- review_goals(): for each goal, the target minutes per week, the minutes logged in the last 7 days, and the difference.
+
+Rules:
+- The EA creates and owns its three tables (ea_food, ea_time, ea_goals) in the same database file. Nothing in core/ knows about them.
+- Every tool returns a short plain-text string the model can read, for example "Saved: lunch, dal and rice".
+- Category names are lower-case with hyphens, for example ai-learning. log_time's description tells the model to reuse an existing goal category when one fits.
+- On every turn, respond() adds the current goal categories to the end of the system prompt, so the model knows the exact names.
+- respond() now passes the four tools to loop.run().
+- Rewrite agents/ea/prompts/system.md: what the EA is for, that it logs food and time whenever I mention them without asking first, and that it answers briefly once its tools have run.
+
+Tests, using a temporary database: each tool writes or reads the right rows; review_goals counts only the last 7 days; calling set_goal twice for one category updates it instead of adding a second row.
+
+Done means: I send "had dal and rice for lunch and did 2h of AI study" and rows appear in ea_food and ea_time.</pre>
+  </div>
+
+  <p class="lab">Read the diff</p>
+  <ul>
+    <li>Read the four descriptions in <code>agents/ea/tools.py</code> as if you were the model and knew nothing else. Would you know when to use each one? Edit them yourself until you would. This is the part of the step that is most worth doing by hand.</li>
+    <li>Find where the three tables are created. It should be inside <code>agents/ea/</code>, never in <code>core/</code>.</li>
+    <li>Open <code>prompts/system.md</code>. That file, the goal categories, the last ten turns and the four tool descriptions are everything the model knows about you. That is the EA's context.</li>
+  </ul>
+<figure class="fig"><div class="in"><div class="inout"><div class="yes"><h4>In the context, every call</h4><ul><li><code>system.md</code>, the instructions</li><li>your current goal categories</li><li>the four tool descriptions</li><li>the last ten turns</li><li>your new message</li><li>tool requests and results from this run</li></ul></div><div class="no"><h4>Not in the context</h4><ul><li>anything older than ten turns</li><li>the rows in <code>ea_food</code>, <code>ea_time</code>, <code>ea_goals</code>, unless a tool reads them</li><li>the events log</li><li>your Python code</li><li>anything else on your Mac</li></ul></div></div><figcaption><b>The model knows the left column and nothing else.</b> If the EA gets something wrong, the first question is whether the fact was on the left.</figcaption></div></figure>
+
+  <p class="lab">Check</p>
+  <p>Send these two messages, one after the other:</p>
+  <div class="codebox">
+    <header>You, in Telegram</header>
+    <pre>set a goal: 10 hours of AI learning a week</pre>
+  </div>
+  <div class="codebox">
+    <header>You, in Telegram</header>
+    <pre>had dal and rice for lunch and did 2h of AI study</pre>
+  </div>
+  <p>Then look at the tables:</p>
+  <div class="codebox">
+    <header>Terminal</header>
+    <pre>sqlite3 ea.db "select * from ea_goals; select * from ea_food; select * from ea_time"</pre>
+  </div>
+  <p>One goal, one meal, one time entry of 120 minutes. The time entry's category should match the goal's category exactly.</p>
+</section>
+
+<!-- ============ STEP 6 ============ -->
+<section class="step" id="s6">
+  <header><span class="num">6</span><h2>Policy</h2><label class="tick"><input type="checkbox" id="done-s6"> Done</label></header>
+  <p>The model chooses which tool to call. But the model's output is text you did not write. It can be wrong, and later it can be steered by text the model has read, which is called prompt injection. So the harness keeps the final say: one function, called before every tool run, answers "is this agent allowed to use this tool?"</p>
+  <p>The list of what each agent may use is kept in <code>config.py</code>, apart from the agent's own code. Adding a tool then takes two deliberate acts: writing it, and granting it. A bank would call that list entitlements.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 204" role="img" aria-label="The model asks for a tool. The policy check looks it up in the allowlist from config.py. If it is listed the tool runs. If not, the call is refused, logged, and the model is told."><g><rect x="20" y="78" width="110" height="50" rx="10" class="b model"/><text x="75.0" y="100.0" class="t" text-anchor="middle">Model</text><text x="75.0" y="115.0" class="ts" text-anchor="middle">asks for a tool</text></g><path d="M130,103 L217,103" class="ln model" marker-end="url(#ah-model)"/><text x="174" y="95" class="tl model" text-anchor="middle">log_food(…)</text><g><rect x="220" y="14" width="150" height="34" rx="10" class="b data"/><text x="295.0" y="35.5" class="t tm" text-anchor="middle">TOOL_ALLOWLIST</text></g><path d="M295,48 L295,75" class="ln data" marker-end="url(#ah-data)"/><text x="303" y="66" class="tl data" text-anchor="start">config.py</text><g><rect x="220" y="78" width="150" height="50" rx="10" class="b code"/><text x="295.0" y="100.0" class="t" text-anchor="middle">Policy</text><text x="295.0" y="115.0" class="ts" text-anchor="middle">on this agent&#x27;s list?</text></g><path d="M370,94 L497,56" class="ln ok" marker-end="url(#ah-ok)"/><text x="430" y="66" class="tl ok" text-anchor="middle">yes</text><path d="M370,112 L497,146" class="ln risk" marker-end="url(#ah-risk)"/><text x="430" y="138" class="tl risk" text-anchor="middle">no</text><g><rect x="500" y="30" width="160" height="48" rx="10" class="b tool"/><text x="580.0" y="58.5" class="t" text-anchor="middle">Tool runs</text></g><g><rect x="500" y="124" width="160" height="50" rx="10" class="b risk"/><text x="580.0" y="146.0" class="t" text-anchor="middle">Refused</text><text x="580.0" y="161.0" class="ts" text-anchor="middle">logged as policy_refused</text></g><path d="M580,174 L580,192 L75,192 L75,131" class="ln risk" marker-end="url(#ah-risk)"/><text x="328" y="186" class="tl risk" text-anchor="middle">the model is told &quot;Tool not permitted&quot;</text></svg></div><figcaption><b>One gate, in one place.</b> Nothing reaches a tool function without passing through it. Phase 4 adds "ask me first" to this same gate.</figcaption></div></figure>
+  <p>Today the check is small and refuses nothing the EA needs. Its value is that the place for it now exists. In Phase 4 you add rules such as "this tool needs my approval first" in that one place, without touching the loop.</p>
+
+  <p class="lab">Give Claude Code this</p>
+  <div class="codebox prompt">
+    <header>Prompt</header>
+    <pre>Do Phase 1 step 6: the policy check.
+
+config.py: TOOL_ALLOWLIST = {"ea": ["log_food", "log_time", "set_goal", "review_goals"]}
+
+core/policy.py: allowed(agent, tool_name) -&gt; bool, read from TOOL_ALLOWLIST. An agent or a tool that is not listed is refused.
+
+core/loop.py: run() takes the agent name and calls policy.allowed() before every tool run. This is the only place in the codebase where a tool function is called. A refused call does not run. The model gets "Tool not permitted" as the tool result, and a policy_refused event is logged with the agent, the tool name and the arguments.
+
+Tests: an allowed tool runs; a registered tool that is missing from the allowlist is refused, does not run, and writes a policy_refused event; an unknown agent is refused.
+
+Done means: pytest passes and the step 5 messages still work end to end.</pre>
+  </div>
+
+  <p class="lab">Read the diff</p>
+  <ul>
+    <li>Find the line in <code>core/loop.py</code> that calls the policy. It must come before the tool function is called, and there must be no other route to running a tool.</li>
+    <li>See it refuse for real. Remove <code>"log_food"</code> from <code>TOOL_ALLOWLIST</code>, restart the bot and tell it what you ate. It should say it could not log it. Find the <code>policy_refused</code> row in the events table. Then put <code>"log_food"</code> back.</li>
+  </ul>
+
+  <p class="lab">Check</p>
+  <div class="codebox">
+    <header>Terminal</header>
+    <pre>pytest -q
+sqlite3 ea.db "select id, payload from events where kind='policy_refused'"</pre>
+  </div>
+  <p>The second command shows the refusal you caused on purpose.</p>
+</section>
+
+<!-- ============ STEP 7 ============ -->
+<section class="step" id="s7">
+  <header><span class="num">7</span><h2>Trace</h2><label class="tick"><input type="checkbox" id="done-s7"> Done</label></header>
+  <p>A <strong>trace</strong> is the full record of one run: every model call and every tool call, in order, with what went in and what came out. Since v0 every event has carried a <code>parent_id</code>, so the tree already exists in your database. This step adds a command that prints it.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 262" role="img" aria-label="Left: eight event rows with id, kind and parent_id. Right: the same rows drawn as a tree. The message is the root, model calls and the reply sit under it, and each tool call sits under the model call that asked for it."><text x="34" y="20" class="th" text-anchor="start">id</text><text x="86" y="20" class="th" text-anchor="start">kind</text><text x="204" y="20" class="th" text-anchor="start">parent_id</text><text x="380" y="20" class="th" text-anchor="start">the same rows, as a tree</text><rect x="20" y="30" width="270" height="222" rx="10" class="b data"/><text x="34" y="54" class="tm" text-anchor="start">412</text><text x="86" y="54" class="tm" text-anchor="start">message</text><text x="204" y="54" class="ts" text-anchor="start">(none)</text><rect x="380" y="39" width="160" height="22" rx="6" class="b "/><text x="390" y="54" class="tm" text-anchor="start">412 message</text><text x="34" y="80" class="tm" text-anchor="start">413</text><text x="86" y="80" class="tm" text-anchor="start">model_call</text><text x="204" y="80" class="tm" text-anchor="start">412</text><rect x="410" y="65" width="160" height="22" rx="6" class="b model"/><text x="420" y="80" class="tm" text-anchor="start">413 model_call</text><text x="34" y="106" class="tm" text-anchor="start">414</text><text x="86" y="106" class="tm" text-anchor="start">tool_call</text><text x="204" y="106" class="tm" text-anchor="start">413</text><rect x="440" y="91" width="160" height="22" rx="6" class="b tool"/><text x="450" y="106" class="tm" text-anchor="start">414 log_food</text><text x="34" y="132" class="tm" text-anchor="start">415</text><text x="86" y="132" class="tm" text-anchor="start">tool_call</text><text x="204" y="132" class="tm" text-anchor="start">413</text><rect x="440" y="117" width="160" height="22" rx="6" class="b tool"/><text x="450" y="132" class="tm" text-anchor="start">415 log_time</text><text x="34" y="158" class="tm" text-anchor="start">416</text><text x="86" y="158" class="tm" text-anchor="start">model_call</text><text x="204" y="158" class="tm" text-anchor="start">412</text><rect x="410" y="143" width="160" height="22" rx="6" class="b model"/><text x="420" y="158" class="tm" text-anchor="start">416 model_call</text><text x="34" y="184" class="tm" text-anchor="start">417</text><text x="86" y="184" class="tm" text-anchor="start">tool_call</text><text x="204" y="184" class="tm" text-anchor="start">416</text><rect x="440" y="169" width="160" height="22" rx="6" class="b tool"/><text x="450" y="184" class="tm" text-anchor="start">417 review_goals</text><text x="34" y="210" class="tm" text-anchor="start">418</text><text x="86" y="210" class="tm" text-anchor="start">model_call</text><text x="204" y="210" class="tm" text-anchor="start">412</text><rect x="410" y="195" width="160" height="22" rx="6" class="b model"/><text x="420" y="210" class="tm" text-anchor="start">418 model_call</text><text x="34" y="236" class="tm" text-anchor="start">419</text><text x="86" y="236" class="tm" text-anchor="start">reply</text><text x="204" y="236" class="tm" text-anchor="start">412</text><rect x="410" y="221" width="160" height="22" rx="6" class="b "/><text x="420" y="236" class="tm" text-anchor="start">419 reply</text><path d="M390,61 L390,232" class="ln"/><path d="M390,76 L410,76" class="ln"/><path d="M390,154 L410,154" class="ln"/><path d="M390,206 L410,206" class="ln"/><path d="M390,232 L410,232" class="ln"/><path d="M420,87 L420,128" class="ln"/><path d="M420,102 L440,102" class="ln"/><path d="M420,128 L440,128" class="ln"/><path d="M420,165 L420,180" class="ln"/><path d="M420,180 L440,180" class="ln"/><path d="M294,140 L372,140" class="ln data" marker-end="url(#ah-data)"/><text x="333" y="131" class="tl data" text-anchor="middle">follow parent_id</text></svg></div><figcaption><b>The trace is already in your database.</b> Each row names the row that caused it. The command only has to follow those links and indent.</figcaption></div></figure>
+  <p>You will use it every day from here on. When the EA does something odd, the trace shows you which step went wrong. In Phase 2 your evals read these same traces.</p>
+
+  <p class="lab">Give Claude Code this</p>
+  <div class="codebox prompt">
+    <header>Prompt</header>
+    <pre>Do Phase 1 step 7: the trace command.
+
+python -m core.events recent              the last 10 messages with their ids
+python -m core.events trace &lt;message_id&gt;  one message's tree
+python -m core.events trace last          the most recent message
+
+The tree is indented by parent and shows: the message; each model call (seconds, input tokens, output tokens, how many tools it asked for); each tool call (name, arguments, result or error); any policy refusals; the reply. Long text is cut to one line. The last line gives totals: model calls, tool calls, tokens, seconds.
+
+Tests: build a small tree in a temporary database and check the printed output.
+
+Done means: I can read a whole run top to bottom without opening SQLite.</pre>
+  </div>
+
+  <p class="lab">Read the diff</p>
+  <ul>
+    <li>Find how the command collects the children of an event. It follows <code>parent_id</code>, the column you have had since v0.</li>
+    <li>Run <code>python -m core.events trace last</code> with <code>core/loop.py</code> open next to it. Match every line of the trace to the line of the loop that produced it.</li>
+  </ul>
+
+  <p class="lab">Check</p>
+  <div class="codebox">
+    <header>Terminal</header>
+    <pre>pytest -q
+python -m core.events recent
+python -m core.events trace last</pre>
+  </div>
+  <p>The output should look like the example at the top of this page.</p>
+</section>
+
+<!-- ============ STEP 8 ============ -->
+<section class="step" id="s8">
+  <header><span class="num">8</span><h2>Ship</h2><label class="tick"><input type="checkbox" id="done-s8"> Done</label></header>
+  <p>Prove it works, then write it down. This step is yours. Claude Code can check your spelling, but the thinking has to be your own, because you will be asked about it.</p>
+<div class="cards five"><div><span class="k">Prove</span><b>3 passing runs</b><span>The exit test, three times in a row.</span></div><div><span class="k">Show</span><b>A saved trace</b><span>One real run, safe to publish.</span></div><div><span class="k">Explain</span><b>A one-pager</b><span>Built, broke, measured, at bank scale.</span></div><div><span class="k">Decide</span><b>An ADR</b><span>Why core and agents are split.</span></div><div><span class="k">Mark</span><b>Tag v1</b><span>A name on the finished commit.</span></div></div>
+
+  <h3>1. Run the exit test three times</h3>
+  <p>Make sure a goal exists (you set one in step 5). Then send the exit test message from the top of this page three times, a few minutes apart, and run <code>python -m core.events trace last</code> after each.</p>
+  <p>A pass means <code>log_food</code>, <code>log_time</code> and <code>review_goals</code> each ran, and the reply says where you stand on the goal. Three times because models do not behave identically every run. One pass can be luck. That thought is the start of Phase 2.</p>
+
+  <h3>2. Save one trace</h3>
+  <p>Copy one trace into <code>docs/phase-1/trace.txt</code>. Read it first. It is going on GitHub, so it must contain nothing you would not publish.</p>
+
+  <h3>3. Write the one-pager</h3>
+  <p><code>docs/phase-1/README.md</code>, one page, four headings:</p>
+  <ul>
+    <li><strong>What I built.</strong> A few sentences and the loop drawn in text.</li>
+    <li><strong>What broke.</strong> The real problems you hit, and what fixed each one.</li>
+    <li><strong>What I measured.</strong> From your traces: model calls per message, tokens per message, seconds per message, and how many of the three exit runs passed.</li>
+    <li><strong>What changes at bank scale.</strong> Who approves a new tool? Where does the log live and who may read it? What happens when the model provider is down?</li>
+  </ul>
+
+  <h3>4. Write the decision record</h3>
+  <p>An ADR (architecture decision record) is half a page that explains one design decision to someone who was not there. Write <code>docs/adr/001-core-and-agents.md</code> with three headings:</p>
+  <ul>
+    <li><strong>Context.</strong> One agent today, more coming. You want one place to measure cost and one place to enforce security.</li>
+    <li><strong>Decision.</strong> Shared machinery in <code>core/</code>, one folder per agent, <code>core/</code> never imports an agent, every model call goes through the gateway, every tool run goes through policy.</li>
+    <li><strong>Consequences.</strong> What this makes easier, and what it makes harder.</li>
+  </ul>
+
+  <h3>5. Tag it</h3>
+  <div class="codebox">
+    <header>Terminal</header>
+    <pre>git add -A &amp;&amp; git commit -m "phase 1: write-up and ADR"
+git tag v1
+git push &amp;&amp; git push --tags</pre>
+  </div>
+</section>
+
+<h2>Where everything ends up</h2>
+<div class="codebox">
+  <header>The repo after Phase 1</header>
+  <pre>channels/telegram.py           Telegram in and out
+agents/ea/agent.py             how the EA answers one message
+agents/ea/tools.py             log_food, log_time, set_goal, review_goals
+agents/ea/prompts/system.md    the EA's instructions
+core/gateway.py                the only door to a model
+core/tools.py                  what a tool is
+core/loop.py                   the agent loop
+core/policy.py                 may this tool run?
+core/events.py                 the log, and the trace command
+config.py                      model, paths, limits, allowlist
+tests/                         tests for each module
+docs/phase-1/                  your write-up and a saved trace
+docs/adr/                      decision records
+CLAUDE.md                      the rules Claude Code follows</pre>
+</div>
+
+<h2>Do alongside</h2>
+<p>Two small habits during this phase make Phase 2 possible. Keep both in <code>private/notes.md</code>, which git ignores, because they contain your real messages.</p>
+<ol>
+  <li><strong>Save 20 real messages.</strong> Each time you send the EA something real, paste it into the file with one line saying what should have happened. In Phase 2 these become your test set.</li>
+  <li><strong>Note every bad reply.</strong> One line each: what you asked and what went wrong. In Phase 2 this list tells you what to measure.</li>
+</ol>
+
+<h2>You have got it when</h2>
+<p>You can answer these out loud, without notes. They are the questions an interviewer asks about agents.</p>
+<ul>
+  <li>Draw the loop from memory, including both ways it stops.</li>
+  <li>What is the difference between a workflow and an agent? Which is your EA, and why?</li>
+  <li>What goes into the model's context on every call? What gets left out?</li>
+  <li>What happens when a tool fails, and why does the error go back to the model?</li>
+  <li>Why does code check the model's tool request before running it?</li>
+</ul>
+
+<h2>Check yourself</h2>
+<p>Six questions. Each answer explains itself and links back to the step that covers it.</p>
+<div class="quiz" id="quiz"><fieldset data-right="2"><legend>1. The model asks for <code>log_food</code>. What runs the function?</legend><div class="opts"><button type="button" data-i="0">The model runs it</button><button type="button" data-i="1">OpenRouter runs it</button><button type="button" data-i="2">Your harness runs it, on your Mac</button></div><p class="why" hidden><b>Your harness runs it, on your Mac.</b> The model only writes a request. Your loop looks up the function and calls it. <a href="#s3">Back to Step 3</a></p></fieldset><fieldset data-right="1"><legend>2. You asked "what's my name?" and the bot got it right. Where was your name kept?</legend><div class="opts"><button type="button" data-i="0">Inside the model</button><button type="button" data-i="1">In the events table, and sent again with the new message</button><button type="button" data-i="2">In the macOS Keychain</button></div><p class="why" hidden><b>In the events table, and sent again with the new message.</b> A model keeps nothing between calls. The harness read the earlier turn from the log and sent it again. <a href="#s2">Back to Step 2</a></p></fieldset><fieldset data-right="1"><legend>3. A tool raises an exception halfway through a run. What should the loop do?</legend><div class="opts"><button type="button" data-i="0">Stop the bot so you notice</button><button type="button" data-i="1">Send the error text back to the model as the tool result</button><button type="button" data-i="2">Run the tool again until it works</button></div><p class="why" hidden><b>Send the error text back to the model as the tool result.</b> The model can then retry with better arguments or tell you what went wrong. <a href="#s4">Back to Step 4</a></p></fieldset><fieldset data-right="1"><legend>4. Why is the model's own tool request added to the messages before the result?</legend><div class="opts"><button type="button" data-i="0">So the log is complete</button><button type="button" data-i="1">Because the model has no memory: the next call must show what it asked for</button><button type="button" data-i="2">Because Telegram needs it</button></div><p class="why" hidden><b>Because the model has no memory: the next call must show what it asked for.</b> Each call starts from nothing. Without the request, the result would be an answer to a question the model cannot see. <a href="#s4">Back to Step 4</a></p></fieldset><fieldset data-right="1"><legend>5. The model asks for a tool that exists but is missing from <code>TOOL_ALLOWLIST</code>. What happens?</legend><div class="opts"><button type="button" data-i="0">It runs, because it is registered</button><button type="button" data-i="1">It is refused, the model is told, and a policy_refused row is written</button><button type="button" data-i="2">The bot shuts down</button></div><p class="why" hidden><b>It is refused, the model is told, and a policy_refused row is written.</b> Writing a tool and granting it are two separate acts. Only the allowlist grants. <a href="#s6">Back to Step 6</a></p></fieldset><fieldset data-right="2"><legend>6. Which of these is the model <em>not</em> sent on a call?</legend><div class="opts"><button type="button" data-i="0">The system prompt</button><button type="button" data-i="1">The four tool descriptions</button><button type="button" data-i="2">A meal you logged three weeks ago</button><button type="button" data-i="3">Your last ten turns</button></div><p class="why" hidden><b>A meal you logged three weeks ago.</b> Old rows stay in the tables. The model only learns about them if a tool reads them during the run. <a href="#s5">Back to Step 5</a></p></fieldset><p class="score" id="quiz-score" aria-live="polite">0 of 6 answered</p></div>
+<h2>What you can say after this phase</h2>
+<p>"I built an agent loop from scratch: a tool contract, stop rules, error recovery, a policy check before every action and a full trace of every run. Here is one message turning into three tool calls."</p>
+
+<h2>Left for later, on purpose</h2>
+<p>Phase 1 leaves these gaps open. Each belongs to a later phase, and knowing they are there is part of the learning.</p>
+<div class="tw"><table>
+  <thead><tr><th>Gap</th><th>What is true after Phase 1</th><th>Closed in</th></tr></thead>
+  <tbody>
+    <tr><td>Quality</td><td>You judge replies by eye. Nothing is measured.</td><td>Phase 2</td></tr>
+    <tr><td>Spend</td><td>The only limit is the one on your OpenRouter key. Nothing in the code stops a runaway bill.</td><td>Phase 3</td></tr>
+    <tr><td>Approvals</td><td>Every allowed tool runs without asking you.</td><td>Phase 4</td></tr>
+    <tr><td>Local data</td><td>Redaction covers what is sent to the model. <code>ea.db</code> on your Mac holds the raw text.</td><td>Phase 4</td></tr>
+    <tr><td>Memory</td><td>The EA forgets anything older than ten turns unless a tool saved it to a table.</td><td>Phase 5</td></tr>
+  </tbody>
+</table></div>
+
+<div class="pager">
+  <a href="index.html"><span class="lbl">Back</span>← Start here</a>
+  <a href="roadmap.html#p2"><span class="lbl">After Phase 1</span>Phase 2: Evals →</a>
+</div>
+
+</main>
+<script>
+// Harness Handbook: copy buttons and "done" ticks. Both are conveniences;
+// every page reads fine with this file missing.
+
+(function () {
+  // Copy button on every code box.
+  document.querySelectorAll(".codebox").forEach(function (box) {
+    var head = box.querySelector("header");
+    var pre = box.querySelector("pre");
+    if (!head || !pre) return;
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy";
+    btn.textContent = "Copy";
+    btn.addEventListener("click", function () {
+      var done = function () {
+        btn.textContent = "Copied";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1200);
+      };
+      var selectText = function () {
+        var range = document.createRange();
+        range.selectNodeContents(pre);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        btn.textContent = "Selected";
+      };
+      try {
+        navigator.clipboard.writeText(pre.innerText).then(done, selectText);
+      } catch (e) {
+        selectText();
+      }
+    });
+    head.appendChild(btn);
+  });
+
+  // "Done" ticks on steps, remembered in this browser only.
+  var KEY = "harness-handbook:" + (document.body.dataset.page || "page");
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { saved = {}; }
+
+  function paint(id, on) {
+    var step = document.getElementById(id);
+    if (step) step.classList.toggle("is-done", on);
+    document.querySelectorAll('.steplist li[data-step="' + id + '"], .track a[data-step="' + id + '"]').forEach(function (el) {
+      el.classList.toggle("is-done", on);
+    });
+  }
+
+  document.querySelectorAll(".step .tick input").forEach(function (box) {
+    var step = box.closest(".step");
+    if (!step || !step.id) return;
+    box.checked = !!saved[step.id];
+    paint(step.id, box.checked);
+    box.addEventListener("change", function () {
+      saved[step.id] = box.checked;
+      paint(step.id, box.checked);
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) { /* not saved; fine */ }
+    });
+  });
+})();
+</script>
+<script>
+// Phase 1: the loop player and the quiz. Without this script the page shows the loop's starting state.
+(function () {
+  var list = document.getElementById("lp-msgs");
+  var cap = document.getElementById("lp-cap");
+  if (!list || !cap) return;
+  var base = list.innerHTML;
+  var steps = [
+    { hot: ["lp-msg"], calls: 0,
+      cap: "The harness has built the list below: the instructions, your recent history and the new message. The four tool descriptions go along with every call." },
+    { hot: ["lp-model", "lp-ask"], calls: 1,
+      cap: "Model call 1. The model reads the whole list and decides it needs two tools. It answers with requests, not with text.",
+      add: [["assistant", "wants <code>log_food(\"dal and rice\", \"lunch\")</code> and <code>log_time(120, \"ai-learning\")</code>"]] },
+    { hot: ["lp-tool"], calls: 1,
+      cap: "The harness checks both requests against the allowlist, then runs the two Python functions. Rows are written to ea_food and ea_time. Each result becomes a new message.",
+      add: [["tool", "Saved: lunch, dal and rice"], ["tool", "Saved: 120 min, ai-learning"]] },
+    { hot: ["lp-model", "lp-ask"], calls: 2,
+      cap: "Model call 2. The whole list goes back, three messages longer. The model can see the food and the time are saved, so it asks for the goal review.",
+      add: [["assistant", "wants <code>review_goals()</code>"]] },
+    { hot: ["lp-tool"], calls: 2,
+      cap: "The harness runs review_goals, which reads ea_time and ea_goals and returns one short line.",
+      add: [["tool", "ai-learning: 120 of 600 min this week"]] },
+    { hot: ["lp-model", "lp-ask"], calls: 3,
+      cap: "Model call 3. Nothing is left to do, so this time the model answers in plain text.",
+      add: [["assistant", "Logged lunch and 2h of study. You are at 2h of your 10h goal this week."]] },
+    { hot: ["lp-reply"], calls: 3,
+      cap: "No tool request, so the loop ends and the text goes to Telegram. Three model calls and three tool runs, for one message from you." }
+  ];
+  var i = 0;
+  var names = ["lp-msg", "lp-model", "lp-ask", "lp-tool", "lp-reply"];
+  function render() {
+    var html = base;
+    for (var s = 1; s <= i; s++) {
+      (steps[s].add || []).forEach(function (m) {
+        html += '<li class="' + m[0] + (s === i ? " fresh" : "") + '"><span class="r">' + m[0] + "</span><span>" + m[1] + "</span></li>";
+      });
+    }
+    list.innerHTML = html;
+    names.forEach(function (n) {
+      var el = document.getElementById(n);
+      if (el) el.classList.toggle("hot", steps[i].hot.indexOf(n) !== -1);
+    });
+    cap.textContent = steps[i].cap;
+    document.getElementById("lp-count").textContent = "step " + i + " of " + (steps.length - 1);
+    document.getElementById("lp-calls").textContent = "model calls: " + steps[i].calls + " of 6 allowed";
+    document.getElementById("lp-back").disabled = i === 0;
+    document.getElementById("lp-next").disabled = i === steps.length - 1;
+  }
+  document.getElementById("lp-next").addEventListener("click", function () { if (i < steps.length - 1) { i++; render(); } });
+  document.getElementById("lp-back").addEventListener("click", function () { if (i > 0) { i--; render(); } });
+  document.getElementById("lp-reset").addEventListener("click", function () { i = 0; render(); });
+  render();
+})();
+
+(function () {
+  var quiz = document.getElementById("quiz");
+  if (!quiz) return;
+  var score = document.getElementById("quiz-score");
+  var sets = quiz.querySelectorAll("fieldset");
+  var answered = 0, correct = 0;
+  sets.forEach(function (fs) {
+    var right = Number(fs.getAttribute("data-right"));
+    var buttons = fs.querySelectorAll(".opts button");
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (fs.getAttribute("data-done")) return;
+        fs.setAttribute("data-done", "1");
+        var pick = Number(btn.getAttribute("data-i"));
+        buttons.forEach(function (b) {
+          var n = Number(b.getAttribute("data-i"));
+          if (n === right) b.classList.add("right");
+          else if (n === pick) b.classList.add("wrong");
+          b.disabled = true;
+        });
+        fs.querySelector(".why").hidden = false;
+        answered++;
+        if (pick === right) correct++;
+        score.textContent = answered + " of " + sets.length + " answered, " + correct + " right";
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

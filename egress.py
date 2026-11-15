@@ -2,7 +2,7 @@ import re, time, httpx, keyring
 from events import log
 
 # Use a model ID copied from openrouter.ai/models. This is an example, verify it exists.
-MODEL = "meta-llama/llama-3.3-70b-instruct"
+MODEL = "moonshotai/kimi-k3.1-pro"
 
 PATTERNS = [
     (re.compile(r"\b(?:\d[ -]?){13,19}\b"), "[CARD]"),

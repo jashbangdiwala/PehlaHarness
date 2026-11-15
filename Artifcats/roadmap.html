@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Harness Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap">
+<style>
+/* Harness Handbook: shared style. The same block is in every chapter; change all five together.
+   Layout: one reading column on a dark gradient ground. Every figure sits in a gradient-edged panel.
+   Colour is a code, used the same way in every diagram: violet = the model, blue = your harness code,
+   teal = tools, amber = stored data, rose = risk or refusal, green = done or passing. */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #090b13;
+  --surface: #121627;
+  --surface2: #1a2038;
+  --ink: #e9ecf6;
+  --muted: #9da6c0;
+  --faint: #6f7896;
+  --line: #242a44;
+  --line2: #37406a;
+  --code-bg: #0b0e1a;
+
+  --c-model: #b7a1ff;
+  --c-code: #72acff;
+  --c-tool: #4fe2c9;
+  --c-data: #ffc56e;
+  --c-risk: #ff8097;
+  --c-ok: #6fe8aa;
+
+  --c-model-s: rgba(183, 161, 255, 0.14);
+  --c-code-s: rgba(114, 172, 255, 0.14);
+  --c-tool-s: rgba(79, 226, 201, 0.13);
+  --c-data-s: rgba(255, 197, 110, 0.13);
+  --c-risk-s: rgba(255, 128, 151, 0.13);
+  --c-ok-s: rgba(111, 232, 170, 0.13);
+
+  --grad: linear-gradient(100deg, #4fe2c9 0%, #72acff 48%, #b7a1ff 100%);
+  --grad-edge: linear-gradient(140deg, rgba(79, 226, 201, 0.55), rgba(114, 172, 255, 0.22) 42%, rgba(183, 161, 255, 0.55));
+
+  /* older names, kept so every component reads from one palette */
+  --accent: #8ebcff;
+  --accent-soft: var(--c-code-s);
+  --ok: var(--c-ok);
+  --ok-soft: var(--c-ok-s);
+  --warn: var(--c-data);
+  --warn-soft: var(--c-data-s);
+
+  --font-head: "Space Grotesk", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --col: 46rem;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; background: var(--bg); }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font: 1rem/1.65 var(--font-body);
+  background:
+    radial-gradient(900px 480px at 10% -6%, rgba(114, 172, 255, 0.22), transparent 62%),
+    radial-gradient(760px 440px at 94% -4%, rgba(183, 161, 255, 0.20), transparent 60%),
+    radial-gradient(720px 520px at 52% 4%, rgba(79, 226, 201, 0.09), transparent 66%),
+    var(--bg);
+  background-repeat: no-repeat;
+}
+
+.wrap {
+  max-width: var(--col);
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* ---------- chapter bar ---------- */
+
+.topbar { border-bottom: 1px solid var(--line); background: rgba(9, 11, 19, 0.55); }
+.topbar .wrap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1.25rem; padding-block: 0.8rem; }
+.brand {
+  font: 600 0.95rem var(--font-head);
+  text-decoration: none;
+  margin-right: auto;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.topbar nav { display: flex; flex-wrap: wrap; gap: 0.15rem 1rem; }
+.topbar nav a {
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 0.15rem 0;
+  border-bottom: 2px solid transparent;
+}
+.topbar nav a:hover { color: var(--ink); }
+.topbar nav a[aria-current="page"] { color: var(--ink); border-image: var(--grad) 1; }
+
+/* ---------- page ---------- */
+
+main.wrap { padding-block: 2.75rem 5rem; }
+
+.eyebrow {
+  font: 500 0.75rem var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+h1, h2, h3 { font-family: var(--font-head); text-wrap: balance; line-height: 1.2; }
+h1 {
+  font-size: 2.5rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0 0 1rem;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+h2 { font-size: 1.45rem; font-weight: 600; margin: 3.5rem 0 0.75rem; }
+h3 { font-size: 1.05rem; font-weight: 600; margin: 1.75rem 0 0.4rem; }
+
+p { margin: 0 0 1rem; }
+.lede { font-size: 1.15rem; line-height: 1.6; color: var(--ink); }
+.small { font-size: 0.9rem; color: var(--muted); }
+
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 2px solid var(--c-tool);
+  outline-offset: 2px;
+}
+
+ul, ol { margin: 0 0 1rem; padding-left: 1.35rem; }
+li { margin: 0.3rem 0; }
+li > ul, li > ol { margin-bottom: 0; }
+strong { font-weight: 600; }
+
+code {
+  font: 0.86em var(--font-mono);
+  background: var(--surface2);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- status chips ---------- */
+
+.chip {
+  display: inline-block;
+  font: 500 0.7rem var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: var(--surface2);
+  color: var(--muted);
+}
+.chip.done { background: var(--c-ok-s); color: var(--c-ok); }
+.chip.next { background: var(--grad); color: #071019; font-weight: 600; }
+
+/* ---------- figures ---------- */
+
+.fig {
+  margin: 1.25rem 0 1.75rem;
+  padding: 1px;
+  border-radius: 15px;
+  background: var(--grad-edge);
+}
+.fig > .in {
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 1rem 1rem 0.85rem;
+}
+.fig figcaption {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.fig figcaption b { color: var(--ink); font-weight: 600; }
+.dgwrap { overflow-x: auto; }
+.dg { display: block; width: 100%; height: auto; min-width: 520px; }
+.dg.sm { min-width: 0; }
+
+.dg text { font-family: var(--font-body); fill: var(--ink); }
+.dg .t { font-size: 13px; font-weight: 600; }
+.dg .ts { font-size: 11.5px; font-weight: 400; fill: var(--muted); }
+.dg .tm { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; }
+.dg .tl { font-size: 11px; fill: var(--muted); paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+.dg .th { font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.08em; fill: var(--faint); text-transform: uppercase; }
+.dg .t.model, .dg .tl.model, .dg .ts.model { fill: var(--c-model); }
+.dg .t.code, .dg .tl.code, .dg .ts.code { fill: var(--c-code); }
+.dg .t.tool, .dg .tl.tool, .dg .ts.tool { fill: var(--c-tool); }
+.dg .t.data, .dg .tl.data, .dg .ts.data { fill: var(--c-data); }
+.dg .t.risk, .dg .tl.risk, .dg .ts.risk { fill: var(--c-risk); }
+.dg .t.ok, .dg .tl.ok, .dg .ts.ok { fill: var(--c-ok); }
+
+.dg .b { fill: var(--surface2); stroke: var(--line2); stroke-width: 1.2; }
+.dg .b.model { fill: var(--c-model-s); stroke: var(--c-model); }
+.dg .b.code { fill: var(--c-code-s); stroke: var(--c-code); }
+.dg .b.tool { fill: var(--c-tool-s); stroke: var(--c-tool); }
+.dg .b.data { fill: var(--c-data-s); stroke: var(--c-data); }
+.dg .b.risk { fill: var(--c-risk-s); stroke: var(--c-risk); }
+.dg .b.ok { fill: var(--c-ok-s); stroke: var(--c-ok); }
+.dg .b.out { fill: none; stroke: var(--faint); stroke-dasharray: 5 4; }
+.dg .b.band { fill: rgba(255, 255, 255, 0.025); stroke: var(--line); }
+.dg .b.frame { fill: rgba(114, 172, 255, 0.05); stroke: var(--c-code); stroke-dasharray: 2 5; stroke-linecap: round; }
+
+.dg .ln { fill: none; stroke: var(--faint); stroke-width: 1.5; }
+.dg .ln.model { stroke: var(--c-model); }
+.dg .ln.code { stroke: var(--c-code); }
+.dg .ln.tool { stroke: var(--c-tool); }
+.dg .ln.data { stroke: var(--c-data); }
+.dg .ln.risk { stroke: var(--c-risk); }
+.dg .ln.ok { stroke: var(--c-ok); }
+.dg .ln.dash { stroke-dasharray: 5 4; }
+.dg .ln.thick { stroke-width: 3; stroke-linecap: round; }
+.mk { fill: var(--faint); }
+.mk.model { fill: var(--c-model); }
+.mk.code { fill: var(--c-code); }
+.mk.tool { fill: var(--c-tool); }
+.mk.data { fill: var(--c-data); }
+.mk.risk { fill: var(--c-risk); }
+.mk.ok { fill: var(--c-ok); }
+
+.dg .hot .b { stroke-width: 2.4; filter: drop-shadow(0 0 7px rgba(114, 172, 255, 0.55)); }
+.dg a { cursor: pointer; }
+.dg a:hover .t { text-decoration: underline; }
+
+/* two figures side by side, stacking when narrow */
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; margin: 1.25rem 0 1.75rem; }
+.duo .fig { margin: 0; }
+@media (max-width: 38rem) { .duo { grid-template-columns: minmax(0, 1fr); } }
+.figtitle { font: 600 0.75rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.5rem; }
+
+/* colour key */
+.key { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin: 0.75rem 0 1.25rem; padding: 0; list-style: none; font-size: 0.88rem; color: var(--muted); }
+.key li { margin: 0; display: inline-flex; align-items: center; gap: 0.4rem; }
+.key i { width: 0.8rem; height: 0.8rem; border-radius: 3px; border: 1.5px solid; display: inline-block; }
+.key .model { border-color: var(--c-model); background: var(--c-model-s); }
+.key .code { border-color: var(--c-code); background: var(--c-code-s); }
+.key .tool { border-color: var(--c-tool); background: var(--c-tool-s); }
+.key .data { border-color: var(--c-data); background: var(--c-data-s); }
+.key .risk { border-color: var(--c-risk); background: var(--c-risk-s); }
+.key .out { border-color: var(--faint); border-style: dashed; }
+
+/* ---------- code, prompts, terminal ---------- */
+
+.codebox {
+  margin: 0.75rem 0 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--code-bg);
+  overflow: hidden;
+}
+.codebox > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.5rem 0.35rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  font: 500 0.72rem var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.codebox.prompt { border-color: transparent; background: linear-gradient(var(--code-bg), var(--code-bg)) padding-box, var(--grad-edge) border-box; }
+.codebox.prompt > header { color: var(--c-tool); }
+.codebox pre {
+  margin: 0;
+  padding: 0.9rem;
+  overflow-x: auto;
+  font: 0.82rem/1.6 var(--font-mono);
+  color: var(--ink);
+  tab-size: 2;
+}
+.codebox.prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.copy {
+  font: 500 0.72rem var(--font-body);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  background: var(--surface2);
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+.copy:hover { border-color: var(--muted); }
+
+/* ---------- buttons ---------- */
+
+.btn {
+  font: 600 0.9rem var(--font-body);
+  border-radius: 9px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border: 1px solid var(--line2);
+  background: var(--surface2);
+  color: var(--ink);
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--grad); border-color: transparent; color: #071019; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.controls { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.count { font: 500 0.8rem var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ---------- steps ---------- */
+
+.step { margin-top: 3.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); }
+.step > header { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-bottom: 0.9rem; }
+.step > header h2 { margin: 0; flex: 1 1 12rem; min-width: 0; }
+.num {
+  font: 600 0.95rem var(--font-mono);
+  width: 2.1rem;
+  height: 2.1rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--grad);
+  color: #071019;
+}
+.tick { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--muted); cursor: pointer; }
+.tick input { width: 1rem; height: 1rem; accent-color: var(--c-ok); }
+.step.is-done .num { background: var(--c-ok); }
+
+.lab {
+  font: 600 0.75rem var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 1.5rem 0 0.4rem;
+}
+
+/* step track: nine dots in three groups */
+.track { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin: 1rem 0 1.25rem; }
+.track .grp { border: 1px solid var(--line); border-radius: 12px; padding: 0.6rem 0.7rem 0.7rem; background: var(--surface); min-width: 0; }
+.track .grp > span { display: block; font: 500 0.7rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+.track .dots { display: flex; gap: 0.4rem; }
+.track a {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 9px;
+  padding: 0.35rem 0.2rem 0.4rem;
+  background: var(--surface2);
+  border: 1px solid var(--line2);
+  color: var(--ink);
+}
+.track a b { display: block; font: 600 0.95rem var(--font-mono); }
+.track a i { display: block; font-style: normal; font-size: 0.7rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.track a:hover { border-color: var(--c-code); }
+.track a.is-done { border-color: var(--c-ok); background: var(--c-ok-s); }
+.track a.is-done b::after { content: " ✓"; color: var(--c-ok); }
+.track .grp.core { border-color: transparent; background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--grad-edge) border-box; }
+@media (max-width: 34rem) { .track { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- step index ---------- */
+
+.steplist { list-style: none; padding: 0; margin: 0 0 1rem; border-top: 1px solid var(--line); }
+.steplist li {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 9rem) minmax(0, 1fr);
+  gap: 0.2rem 0.75rem;
+  padding: 0.55rem 0;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+  align-items: baseline;
+}
+.steplist .n { font: 500 0.85rem var(--font-mono); color: var(--muted); }
+.steplist a { font-weight: 600; text-decoration: none; }
+.steplist a:hover { text-decoration: underline; }
+.steplist span.d { color: var(--muted); font-size: 0.92rem; }
+.steplist li.is-done .n::after { content: " ✓"; color: var(--c-ok); }
+@media (max-width: 34rem) {
+  .steplist li { grid-template-columns: 1.6rem minmax(0, 1fr); }
+  .steplist span.d { grid-column: 2; }
+}
+
+/* ---------- phase list ---------- */
+
+.phases { list-style: none; padding: 0; margin: 0 0 1rem; border-top: 1px solid var(--line); }
+.phases li {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
+  gap: 0.1rem 0.75rem;
+  padding: 0.7rem 0;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+  align-items: baseline;
+}
+.phases .n { font: 500 0.85rem var(--font-mono); color: var(--muted); }
+.phases .t { font-weight: 600; }
+.phases .q { grid-column: 2 / -1; color: var(--muted); font-size: 0.94rem; }
+.phases a { text-decoration: none; }
+.phases a:hover { text-decoration: underline; }
+
+/* ---------- stack diagram (start page) ---------- */
+
+.stack { display: grid; gap: 0; }
+.stack .row {
+  display: grid;
+  grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr);
+  gap: 0.1rem 1rem;
+  align-items: baseline;
+  background: var(--surface2);
+  border: 1.2px solid var(--line2);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+}
+.stack .row b { font: 600 0.88rem var(--font-mono); }
+.stack .row span { font-size: 0.94rem; color: var(--muted); }
+.stack .row.out { background: transparent; border-style: dashed; border-color: var(--faint); }
+.stack .row.code { background: var(--c-code-s); border-color: var(--c-code); }
+.stack .row.model { background: var(--c-model-s); border-color: var(--c-model); border-style: dashed; }
+.stack .arrow { text-align: center; color: var(--muted); font: 0.78rem/1.9 var(--font-mono); }
+@media (max-width: 30rem) { .stack .row { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- notes ---------- */
+
+.note {
+  margin: 1rem 0 1.25rem;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  background: var(--c-data-s);
+  border: 1px solid rgba(255, 197, 110, 0.35);
+  font-size: 0.95rem;
+}
+.note > :last-child { margin-bottom: 0; }
+.note b:first-child { color: var(--c-data); }
+
+/* in / out comparison lists */
+.inout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; }
+.inout > div { border-radius: 10px; padding: 0.75rem 0.9rem; border: 1.2px solid; min-width: 0; }
+.inout .yes { border-color: var(--c-ok); background: var(--c-ok-s); }
+.inout .no { border-color: var(--faint); border-style: dashed; }
+.inout h4 { margin: 0 0 0.4rem; font: 600 0.75rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.inout .yes h4 { color: var(--c-ok); }
+.inout .no h4 { color: var(--muted); }
+.inout ul { margin: 0; padding-left: 1.1rem; font-size: 0.92rem; }
+@media (max-width: 34rem) { .inout { grid-template-columns: minmax(0, 1fr); } }
+
+/* small cards in a row */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 0.7rem; margin: 1rem 0 1.25rem; }
+.cards.five { grid-template-columns: repeat(auto-fit, minmax(7.2rem, 1fr)); }
+.cards > div { border: 1px solid var(--line2); background: var(--surface); border-radius: 12px; padding: 0.75rem 0.85rem; min-width: 0; }
+.cards b { display: block; font: 600 0.95rem var(--font-head); margin-bottom: 0.15rem; }
+.cards span { font-size: 0.88rem; color: var(--muted); }
+.cards .k { display: block; font: 500 0.7rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-tool); margin-bottom: 0.3rem; }
+
+/* ---------- loop player ---------- */
+
+.player { display: grid; gap: 0.9rem; }
+.player .cap { margin: 0; min-height: 4.9em; padding: 0.75rem 0.95rem; border-radius: 10px; background: var(--c-code-s); border: 1px solid rgba(114, 172, 255, 0.35); }
+.msgs { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+.msgs li {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 5.4rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--code-bg);
+  font-size: 0.86rem;
+}
+.msgs .r { font: 600 0.7rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.msgs li.assistant { border-color: var(--c-model); background: var(--c-model-s); }
+.msgs li.assistant .r { color: var(--c-model); }
+.msgs li.tool { border-color: var(--c-tool); background: var(--c-tool-s); }
+.msgs li.tool .r { color: var(--c-tool); }
+.msgs li.user .r { color: var(--ink); }
+.msgs li.pinned { border-style: dashed; }
+.msgs li.fresh { box-shadow: 0 0 0 1px var(--ink); }
+.msgs code { background: none; padding: 0; }
+.msgs-h { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font: 600 0.75rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+
+/* ---------- harness-grows widget ---------- */
+
+.phasebar { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.phasebar button {
+  font: 600 0.85rem var(--font-mono);
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 50%;
+  border: 1px solid var(--line2);
+  background: var(--surface2);
+  color: var(--ink);
+  cursor: pointer;
+}
+.phasebar button[aria-pressed="true"] { background: var(--grad); border-color: transparent; color: #071019; }
+.grow .comp { transition: opacity 0.25s; }
+.grow .comp.off { opacity: 0.16; }
+.grow .comp.new .b { stroke: var(--c-ok); stroke-width: 2.4; fill: var(--c-ok-s); }
+.growcap { margin: 0.75rem 0 0; min-height: 3.3em; }
+.growcap b { color: var(--c-ok); }
+
+/* ---------- quiz ---------- */
+
+.quiz { display: grid; gap: 1rem; margin: 1rem 0; }
+.quiz fieldset { margin: 0; border: 1px solid var(--line2); border-radius: 12px; padding: 0.9rem 1rem 1rem; background: var(--surface); min-width: 0; }
+.quiz legend { font-weight: 600; padding: 0 0.4rem; }
+.quiz .opts { display: grid; gap: 0.4rem; margin-top: 0.5rem; }
+.quiz .opts button {
+  text-align: left;
+  font: 0.94rem/1.45 var(--font-body);
+  color: var(--ink);
+  background: var(--surface2);
+  border: 1px solid var(--line2);
+  border-radius: 9px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+.quiz .opts button:hover { border-color: var(--muted); }
+.quiz .opts button.right { border-color: var(--c-ok); background: var(--c-ok-s); }
+.quiz .opts button.wrong { border-color: var(--c-risk); background: var(--c-risk-s); }
+.quiz .why { margin: 0.7rem 0 0; font-size: 0.92rem; color: var(--muted); }
+.quiz .why b { color: var(--ink); }
+.score { font: 600 0.85rem var(--font-mono); color: var(--muted); }
+
+/* ---------- tables ---------- */
+
+.tw { overflow-x: auto; margin: 0.75rem 0 1.25rem; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.75rem 0.55rem 0; border-bottom: 1px solid var(--line); }
+th { font: 500 0.72rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+td:first-child { font-weight: 600; }
+
+/* ---------- glossary ---------- */
+
+dl.terms { margin: 0 0 1rem; display: grid; grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr); gap: 0; border-top: 1px solid var(--line); }
+dl.terms dt, dl.terms dd { margin: 0; padding: 0.55rem 0; border-bottom: 1px solid var(--line); }
+dl.terms dt { font-weight: 600; padding-right: 0.75rem; }
+dl.terms dd { font-size: 0.95rem; color: var(--muted); }
+@media (max-width: 30rem) {
+  dl.terms { grid-template-columns: minmax(0, 1fr); }
+  dl.terms dt { border-bottom: 0; padding-bottom: 0; }
+  dl.terms dd { padding-top: 0.15rem; }
+}
+
+/* ---------- phase blocks on the roadmap ---------- */
+
+.phase { margin-top: 3.25rem; padding-top: 1.75rem; border-top: 1px solid var(--line); }
+.phase > header { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-bottom: 0.75rem; }
+.phase > header h2 { margin: 0; }
+.facts { margin: 0 0 1rem; display: grid; grid-template-columns: minmax(0, 7rem) minmax(0, 1fr); gap: 0.55rem 1rem; }
+.facts dt { font: 600 0.75rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding-top: 0.25rem; }
+.facts dd { margin: 0; }
+@media (max-width: 30rem) {
+  .facts { grid-template-columns: minmax(0, 1fr); gap: 0.1rem; }
+  .facts dd { margin-bottom: 0.6rem; }
+}
+
+/* ---------- prev / next ---------- */
+
+.pager {
+  margin-top: 4rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+}
+.pager a { text-decoration: none; font-weight: 600; }
+.pager a:hover { text-decoration: underline; }
+.pager .lbl { display: block; font: 500 0.72rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+
+@media (max-width: 30rem) {
+  h1 { font-size: 1.95rem; }
+  h2 { font-size: 1.25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .grow .comp { transition: none; }
+}
+</style>
+</head>
+<body data-page="roadmap">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk "/></marker><marker id="ah-model" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk model"/></marker><marker id="ah-code" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk code"/></marker><marker id="ah-tool" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk tool"/></marker><marker id="ah-data" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk data"/></marker><marker id="ah-risk" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk risk"/></marker><marker id="ah-ok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L9,5 L0,9.2 z" class="mk ok"/></marker></defs></svg>
+
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html">Harness Handbook</a>
+  <nav aria-label="Chapters">
+    <a href="index.html">Start here</a>
+    <a href="how-it-works.html">How it works</a>
+    <a href="phase-0-bot.html">Phase 0</a>
+    <a href="phase-1-agent-loop.html">Phase 1</a>
+    <a href="roadmap.html" aria-current="page">Roadmap</a>
+  </nav>
+</div></div>
+
+<main class="wrap">
+
+<p class="eyebrow">Roadmap</p>
+<h1>Everything after Phase 1</h1>
+<p class="lede">One block per phase: what you build, why it matters, the test that says you are done, the one thing to read first and the questions you should be able to answer afterwards.</p>
+<p>Read only the block you are about to start. Each phase gets its own step-by-step guide when you reach it, the way <a href="phase-1-agent-loop.html">Phase 1</a> has one now.</p>
+
+<h2>The order</h2>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 252" role="img" aria-label="Phase map. 0 Bot, then 1 Agent loop, then 2 Evals. After Evals the path splits into Cost, Security and Memory, which rejoin at 6 Game, then 7 Multi-agent, then 8 Enterprise."><path d="M58,118 L119,118" class="ln ok" marker-end="url(#ah-ok)"/><path d="M148,118 L209,118" class="ln" marker-end="url(#ah)"/><path d="M238,118 L335,118" class="ln" marker-end="url(#ah)"/><path d="M238,118 C292,118 286,54 335,54" class="ln" marker-end="url(#ah)"/><path d="M238,118 C292,118 286,182 335,182" class="ln" marker-end="url(#ah)"/><path d="M364,54 C416,54 410,118 461,118" class="ln" marker-end="url(#ah)"/><path d="M364,118 L461,118" class="ln" marker-end="url(#ah)"/><path d="M364,182 C416,182 410,118 461,118" class="ln" marker-end="url(#ah)"/><path d="M490,118 L545,118" class="ln" marker-end="url(#ah)"/><path d="M574,118 L625,118" class="ln" marker-end="url(#ah)"/><a href="phase-0-bot.html"><circle cx="44" cy="118" r="14" class="b ok"/><text x="44" y="122.5" class="t" text-anchor="middle">0</text><text x="44" y="152" class="t" text-anchor="middle">Bot</text><text x="44" y="167" class="ts ok" text-anchor="middle">done</text></a><a href="phase-1-agent-loop.html" class="hot"><circle cx="134" cy="118" r="14" class="b code"/><text x="134" y="122.5" class="t" text-anchor="middle">1</text><text x="134" y="152" class="t" text-anchor="middle">Agent loop</text></a><a href="#p2"><circle cx="224" cy="118" r="14" class="b "/><text x="224" y="122.5" class="t" text-anchor="middle">2</text><text x="224" y="152" class="t" text-anchor="middle">Evals</text></a><a href="#p3"><circle cx="350" cy="54" r="14" class="b "/><text x="350" y="58.5" class="t" text-anchor="middle">3</text><text x="350" y="30" class="t" text-anchor="middle">Cost</text></a><a href="#p4"><circle cx="350" cy="118" r="14" class="b "/><text x="350" y="122.5" class="t" text-anchor="middle">4</text><text x="350" y="94" class="t" text-anchor="middle">Security</text></a><a href="#p5"><circle cx="350" cy="182" r="14" class="b "/><text x="350" y="186.5" class="t" text-anchor="middle">5</text><text x="350" y="216" class="t" text-anchor="middle">Memory</text></a><a href="#p6"><circle cx="476" cy="118" r="14" class="b "/><text x="476" y="122.5" class="t" text-anchor="middle">6</text><text x="476" y="152" class="t" text-anchor="middle">Game</text></a><a href="#p7"><circle cx="560" cy="118" r="14" class="b "/><text x="560" y="122.5" class="t" text-anchor="middle">7</text><text x="560" y="152" class="t" text-anchor="middle">Multi-agent</text></a><a href="#p8"><circle cx="640" cy="118" r="14" class="b "/><text x="640" y="122.5" class="t" text-anchor="middle">8</text><text x="640" y="152" class="t" text-anchor="middle">Enterprise</text></a><text x="134" y="82" class="th code" text-anchor="middle">You are here</text><path d="M134,88 L134,99" class="ln code" marker-end="url(#ah-code)"/><text x="340" y="240" class="ts" text-anchor="middle">Side tracks: Models starts after Phase 2 · Lab runs any time</text></svg></div><figcaption><b>The order is set by what depends on what.</b> After Evals you can take Cost, Security and Memory in any order. Each stop is a link.</figcaption></div></figure>
+<p>Evals come second on purpose. Every later phase means changing something and proving nothing broke, and you cannot prove that without evals. After Phase 2 you can take Cost, Security and Memory in any order.</p>
+<h2>Watch the harness grow</h2>
+<p>The whole system, with a switch for each phase. Start at 0 and click upward.</p>
+<figure class="fig"><div class="in"><div class="controls" style="margin-bottom:0.8rem"><span class="count">Phase</span><div class="phasebar" id="phasebar"><button type="button" data-p="0" aria-pressed="false">0</button><button type="button" data-p="1" aria-pressed="false">1</button><button type="button" data-p="2" aria-pressed="false">2</button><button type="button" data-p="3" aria-pressed="false">3</button><button type="button" data-p="4" aria-pressed="false">4</button><button type="button" data-p="5" aria-pressed="false">5</button><button type="button" data-p="6" aria-pressed="false">6</button><button type="button" data-p="7" aria-pressed="false">7</button><button type="button" data-p="8" aria-pressed="true">8</button></div></div><div class="dgwrap"><svg class="dg grow" viewBox="0 0 680 348" role="img" aria-label="The finished harness. Channels at the top, then an orchestrator, then three agents (ea, redteam, game), then the core modules: gateway, events, loop, tools, policy, cost ledger, decide and memory. Evals sits to the side and reads everything. Docs run along the bottom."><rect x="20" y="20" width="520" height="50" rx="12" class="b band"/><text x="34" y="48" class="t tm" text-anchor="start">channels/</text><rect x="20" y="124" width="520" height="56" rx="12" class="b band"/><text x="34" y="152" class="t tm" text-anchor="start">agents/</text><rect x="20" y="196" width="520" height="100" rx="12" class="b band"/><text x="34" y="224" class="t tm" text-anchor="start">core/</text><g class="comp" data-phase="0"><g><rect x="150" y="28" width="120" height="34" rx="8" class="b code"/><text x="210.0" y="49.5" class="t" text-anchor="middle">telegram</text></g></g><g class="comp" data-phase="7"><g><rect x="150" y="82" width="380" height="30" rx="8" class="b code"/><text x="340.0" y="101.5" class="t" text-anchor="middle">orchestrator: hands work between agents</text></g></g><g class="comp" data-phase="0" data-touch="1"><g><rect x="150" y="132" width="120" height="40" rx="8" class="b code"/><text x="210.0" y="149.0" class="t" text-anchor="middle">ea</text><text x="210.0" y="164.0" class="ts" text-anchor="middle">your assistant</text></g></g><g class="comp" data-phase="4"><g><rect x="280" y="132" width="120" height="40" rx="8" class="b risk"/><text x="340.0" y="149.0" class="t" text-anchor="middle">redteam</text><text x="340.0" y="164.0" class="ts" text-anchor="middle">attacks the others</text></g></g><g class="comp" data-phase="6"><g><rect x="410" y="132" width="120" height="40" rx="8" class="b code"/><text x="470.0" y="149.0" class="t" text-anchor="middle">game</text><text x="470.0" y="164.0" class="ts" text-anchor="middle">plays 2048</text></g></g><g class="comp" data-phase="0" data-touch="3"><g><rect x="150" y="204" width="89" height="36" rx="8" class="b code"/><text x="194.5" y="226.5" class="t" text-anchor="middle">gateway</text></g></g><g class="comp" data-phase="0" data-touch="3"><g><rect x="247" y="204" width="89" height="36" rx="8" class="b data"/><text x="291.5" y="226.5" class="t" text-anchor="middle">events</text></g></g><g class="comp" data-phase="1"><g><rect x="344" y="204" width="89" height="36" rx="8" class="b code"/><text x="388.5" y="226.5" class="t" text-anchor="middle">loop</text></g></g><g class="comp" data-phase="1"><g><rect x="441" y="204" width="89" height="36" rx="8" class="b tool"/><text x="485.5" y="226.5" class="t" text-anchor="middle">tools</text></g></g><g class="comp" data-phase="1" data-touch="4"><g><rect x="150" y="250" width="89" height="36" rx="8" class="b code"/><text x="194.5" y="272.5" class="t" text-anchor="middle">policy</text></g></g><g class="comp" data-phase="3"><g><rect x="247" y="250" width="89" height="36" rx="8" class="b data"/><text x="291.5" y="272.5" class="t" text-anchor="middle">cost ledger</text></g></g><g class="comp" data-phase="3"><g><rect x="344" y="250" width="89" height="36" rx="8" class="b model"/><text x="388.5" y="272.5" class="t" text-anchor="middle">decide (Jev)</text></g></g><g class="comp" data-phase="5"><g><rect x="441" y="250" width="89" height="36" rx="8" class="b data"/><text x="485.5" y="272.5" class="t" text-anchor="middle">memory</text></g></g><g class="comp" data-phase="2"><g><rect x="560" y="124" width="100" height="172" rx="10" class="b ok"/><text x="610.0" y="186.0" class="t" text-anchor="middle">evals</text><text x="610.0" y="201.0" class="ts" text-anchor="middle">reads traces,</text><text x="610.0" y="215.0" class="ts" text-anchor="middle">scores every</text><text x="610.0" y="229.0" class="ts" text-anchor="middle">agent, gates</text><text x="610.0" y="243.0" class="ts" text-anchor="middle">every change</text></g></g><g class="comp" data-phase="8"><g><rect x="20" y="308" width="640" height="30" rx="8" class="b "/><text x="340.0" y="327.5" class="t" text-anchor="middle">docs: reference architecture, control mapping, incident playbook</text></g></g></svg></div><p class="growcap" id="growcap">Pick a phase to see what exists by the end of it. Parts that are new or changed in that phase are outlined in green.</p><figcaption><b>The same picture as the start page, with every phase added.</b> Nothing is ever rewritten. Each phase adds a part or strengthens one.</figcaption></div></figure>
+
+<h2>What every phase ships</h2>
+<ol>
+  <li><strong>A demo.</strong> A short video or a Telegram screenshot of it working.</li>
+  <li><strong>Numbers.</strong> From Phase 2 on, a scorecard from your eval runner.</li>
+  <li><strong>A one-page write-up.</strong> What I built, what broke, what I measured, what changes at bank scale.</li>
+  <li><strong>One ADR.</strong> The main design decision of the phase, in half a page.</li>
+</ol>
+<div class="cards"><div><span class="k">Show</span><b>A demo</b><span>It working, on video or in a screenshot.</span></div><div><span class="k">Prove</span><b>Numbers</b><span>Measured on your own system.</span></div><div><span class="k">Explain</span><b>A one-pager</b><span>Built, broke, measured, at bank scale.</span></div><div><span class="k">Decide</span><b>An ADR</b><span>The main design choice, in half a page.</span></div></div>
+<p>Those four things are your interview answer for the phase.</p>
+
+<!-- ============ PHASE 2 ============ -->
+<section class="phase" id="p2">
+  <header><span class="num">2</span><h2>Evals</h2></header>
+  <p>An eval is a repeatable test of how the agent behaves. You build the test set, the thing that runs it and the things that grade it.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 112" role="img" aria-label="Evals pipeline: golden set, runner, the EA, traces, graders, scorecard."><g><rect x="12" y="28" width="92" height="56" rx="10" class="b data"/><text x="58.0" y="53.0" class="t" text-anchor="middle">Golden set</text><text x="58.0" y="68.0" class="ts" text-anchor="middle">20 messages</text></g><path d="M106,56.0 L122,56.0" class="ln" marker-end="url(#ah)"/><g><rect x="125" y="28" width="92" height="56" rx="10" class="b code"/><text x="171.0" y="53.0" class="t" text-anchor="middle">Runner</text><text x="171.0" y="68.0" class="ts" text-anchor="middle">replays them</text></g><path d="M219,56.0 L235,56.0" class="ln" marker-end="url(#ah)"/><g><rect x="238" y="28" width="92" height="56" rx="10" class="b code"/><text x="284.0" y="53.0" class="t" text-anchor="middle">EA</text><text x="284.0" y="68.0" class="ts" text-anchor="middle">the agent</text></g><path d="M332,56.0 L347,56.0" class="ln" marker-end="url(#ah)"/><g><rect x="350" y="28" width="92" height="56" rx="10" class="b data"/><text x="396.0" y="53.0" class="t" text-anchor="middle">Traces</text><text x="396.0" y="68.0" class="ts" text-anchor="middle">what it did</text></g><path d="M444,56.0 L460,56.0" class="ln" marker-end="url(#ah)"/><g><rect x="463" y="28" width="92" height="56" rx="10" class="b code"/><text x="509.0" y="53.0" class="t" text-anchor="middle">Graders</text><text x="509.0" y="68.0" class="ts" text-anchor="middle">code + judge</text></g><path d="M557,56.0 L573,56.0" class="ln" marker-end="url(#ah)"/><g><rect x="576" y="28" width="92" height="56" rx="10" class="b ok"/><text x="622.0" y="53.0" class="t" text-anchor="middle">Scorecard</text><text x="622.0" y="68.0" class="ts" text-anchor="middle">A against B</text></g></svg></div><figcaption><b>The same 20 messages, replayed on demand.</b> Change a prompt, run it again, and the scorecard tells you whether you made things better or worse.</figcaption></div></figure>
+  <dl class="facts">
+    <dt>You build</dt>
+    <dd>A <strong>golden set</strong>: 20 real messages, each with the outcome that should happen. A <strong>runner</strong> that replays them through the EA and keeps the traces. <strong>Graders</strong>: code checks where code can decide (was <code>log_food</code> called with <code>meal="lunch"</code>?) and an LLM judge where it cannot (was the reply brief and useful?). One command that scores version A of a prompt against version B.</dd>
+    <dt>Why it matters</dt>
+    <dd>An agent that works when you try it by hand has told you very little. Models vary from run to run, and a prompt change that fixes one case can break three others. Most teams are weak at evals, which makes this one of the most valuable skills on the list.</dd>
+    <dt>Exit test</dt>
+    <dd>One command prints a scorecard comparing two versions of the EA.</dd>
+    <dt>Read first</dt>
+    <dd><a href="https://hamel.dev/blog/posts/evals-faq/">Hamel Husain and Shreya Shankar's evals FAQ</a>. Their <a href="https://www.lennysnewsletter.com/p/why-ai-evals-are-the-hottest-new-skill">conversation on Lenny's Podcast</a> covers the same ideas in an hour of audio.</dd>
+    <dt>Got it when</dt>
+    <dd>You can explain why you read traces before you pick metrics, how you show an LLM judge can be trusted, the difference between a regression eval and a capability eval, and why one run is not a result.</dd>
+  </dl>
+</section>
+
+<!-- ============ PHASE 3 ============ -->
+<section class="phase" id="p3">
+  <header><span class="num">3</span><h2>Cost</h2></header>
+  <p>You already log token counts for every model call. This phase turns them into money, then cuts the bill without lowering the eval score.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 160" role="img" aria-label="Left: a bill split into input tokens, cached input tokens and output tokens. Right: a decision model sorts each message into easy, sent to a small cheap model, or hard, sent to a big model."><text x="20" y="20" class="th" text-anchor="start">One task&#x27;s bill</text><g><rect x="20" y="34" width="124" height="36" rx="6" class="b code"/><text x="82.0" y="56.5" class="t" text-anchor="middle">input</text></g><g><rect x="146" y="34" width="88" height="36" rx="6" class="b ok"/><text x="190.0" y="56.5" class="t" text-anchor="middle">cached</text></g><g><rect x="236" y="34" width="56" height="36" rx="6" class="b model"/><text x="264.0" y="56.5" class="t" text-anchor="middle">output</text></g><text x="20" y="94" class="ts" text-anchor="start">Three kinds of token, three prices.</text><text x="20" y="112" class="ts" text-anchor="start">Caching moves tokens from the first</text><text x="20" y="128" class="ts" text-anchor="start">box into the second, cheaper one.</text><path d="M312,10 L312,150" class="ln"/><text x="330" y="20" class="th" text-anchor="start">Routing</text><g><rect x="330" y="62" width="74" height="46" rx="10" class="b "/><text x="367.0" y="89.5" class="t" text-anchor="middle">Message</text></g><path d="M404,85 L423,85" class="ln" marker-end="url(#ah)"/><g><rect x="426" y="57" width="88" height="56" rx="10" class="b model"/><text x="470.0" y="82.0" class="t" text-anchor="middle">Jev</text><text x="470.0" y="97.0" class="ts" text-anchor="middle">easy or hard?</text></g><path d="M514,74 L567,50" class="ln ok" marker-end="url(#ah-ok)"/><text x="532" y="50" class="tl ok" text-anchor="middle">easy</text><path d="M514,96 L567,124" class="ln model" marker-end="url(#ah-model)"/><text x="532" y="126" class="tl model" text-anchor="middle">hard</text><g><rect x="570" y="26" width="104" height="46" rx="10" class="b ok"/><text x="622.0" y="46.0" class="t" text-anchor="middle">Small model</text><text x="622.0" y="61.0" class="ts" text-anchor="middle">cheap, fast</text></g><g><rect x="570" y="104" width="104" height="46" rx="10" class="b model"/><text x="622.0" y="124.0" class="t" text-anchor="middle">Big model</text><text x="622.0" y="139.0" class="ts" text-anchor="middle">when needed</text></g></svg></div><figcaption><b>Two of the levers.</b> Caching makes repeated context cheaper. Routing stops you paying big-model prices for easy messages.</figcaption></div></figure>
+  <dl class="facts">
+    <dt>You build</dt>
+    <dd>A <strong>cost ledger</strong> from the usage data in your events. A <strong>budget cap</strong> enforced in the gateway. <strong>Prompt caching</strong>, so repeated context is billed at a discount. <strong>Routing</strong>: easy messages go to a cheaper model, with a small decision model (Jev, see Phase 6) making the call.</dd>
+    <dt>Why it matters</dt>
+    <dd>Cost per task decides whether an AI feature survives a budget review. There are only a few levers, and with your ledger and your evals you can measure each one.</dd>
+    <dt>Exit test</dt>
+    <dd>A report showing cost per task went down while the eval score held.</dd>
+    <dt>Read first</dt>
+    <dd>OpenRouter's own pages on <a href="https://openrouter.ai/docs/guides/best-practices/prompt-caching">prompt caching</a> and <a href="https://openrouter.ai/docs/guides/routing/provider-selection">provider selection</a>. You already run on it.</dd>
+    <dt>Got it when</dt>
+    <dd>You can break one task's bill into input, output and cached tokens, explain why a cache hit needs the start of the prompt to stay the same, and rank your three biggest cost levers using numbers from your own ledger.</dd>
+  </dl>
+</section>
+
+<!-- ============ PHASE 4 ============ -->
+<section class="phase" id="p4">
+  <header><span class="num">4</span><h2>Security</h2></header>
+  <p>You attack your own assistant, write down what worked and fix it. The policy check from Phase 1 grows into a real control.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 272" role="img" aria-label="Three overlapping circles: private data, untrusted text, and a way to send data out. An agent with all three is exposed. In the EA these are ea.db, anything it reads that you did not write, and its replies and tools."><circle cx="150" cy="92" r="86" class="b data"/><circle cx="250" cy="92" r="86" class="b risk"/><circle cx="200" cy="178" r="86" class="b tool"/><text x="104" y="62" class="t" text-anchor="middle">Private</text><text x="104" y="78" class="t" text-anchor="middle">data</text><text x="296" y="62" class="t" text-anchor="middle">Untrusted</text><text x="296" y="78" class="t" text-anchor="middle">text</text><text x="200" y="226" class="t" text-anchor="middle">A way to</text><text x="200" y="242" class="t" text-anchor="middle">send out</text><text x="200" y="124" class="ts risk" text-anchor="middle">all three</text><text x="200" y="139" class="ts risk" text-anchor="middle">exposed</text><text x="384" y="44" class="th" text-anchor="start">In your EA</text><rect x="384" y="62" width="12" height="12" rx="3" class="b data"/><text x="406" y="73" class="t" text-anchor="start">Private data</text><text x="406" y="90" class="ts" text-anchor="start">ea.db: your food, time and goals</text><rect x="384" y="116" width="12" height="12" rx="3" class="b risk"/><text x="406" y="127" class="t" text-anchor="start">Untrusted text</text><text x="406" y="144" class="ts" text-anchor="start">anything it reads that you did not write</text><rect x="384" y="170" width="12" height="12" rx="3" class="b tool"/><text x="406" y="181" class="t" text-anchor="start">A way to send out</text><text x="406" y="198" class="ts" text-anchor="start">replies today, more tools later</text><text x="384" y="242" class="ts" text-anchor="start">Take away any one circle and the attack fails.</text></svg></div><figcaption><b>Simon Willison's lethal trifecta, mapped onto your EA.</b> Security design is mostly deciding which circle to shrink for each tool.</figcaption></div></figure>
+  <dl class="facts">
+    <dt>You build</dt>
+    <dd>A <strong>threat model</strong>: a short document saying what can go wrong, who could cause it and what stops it. <strong>Approvals</strong> in the policy layer, so risky tools wait for your yes. A <strong>red-team agent</strong> that attacks the EA with planted instructions and bad input. An <strong>attack suite</strong> inside your evals, so a change that weakens security fails the same way a broken feature does.</dd>
+    <dt>Why it matters</dt>
+    <dd>Prompt injection has no complete fix. An agent that reads untrusted text, holds private data and can send things out can be turned against its owner. Designing around that limit is the core of AI security work.</dd>
+    <dt>Exit test</dt>
+    <dd>The attack suite runs in the eval gate. A findings document lists each attack that landed and its fix.</dd>
+    <dt>Read first</dt>
+    <dd>Simon Willison's <a href="https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/">The lethal trifecta</a>, then the <a href="https://genai.owasp.org/llm-top-10/">OWASP Top 10 for LLM Applications</a>. For the government view, <a href="https://www.cisa.gov/resources-tools/resources/careful-adoption-agentic-ai-services">Careful Adoption of Agentic AI Services</a> from CISA and partner agencies (May 2026). <a href="https://atlas.mitre.org/">MITRE ATLAS</a> is the reference catalogue of attack techniques.</dd>
+    <dt>Got it when</dt>
+    <dd>You can explain why injection cannot be filtered out, point to the three legs of the trifecta inside your own EA, say which tool calls need your approval and why, and walk through one attack your red-team agent landed.</dd>
+  </dl>
+</section>
+
+<!-- ============ PHASE 5 ============ -->
+<section class="phase" id="p5">
+  <header><span class="num">5</span><h2>Memory</h2></header>
+  <p>After Phase 1 the EA remembers ten turns and whatever its tools saved. This phase gives it a memory worth the name.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 166" role="img" aria-label="Write path: things worth keeping from the conversation are saved to a long-term store, which a nightly job tidies. Read path: a new message triggers a search of the store, and the best few items join the context sent to the model."><g><rect x="24" y="18" width="140" height="44" rx="10" class="b "/><text x="94.0" y="37.0" class="t" text-anchor="middle">Conversation</text><text x="94.0" y="52.0" class="ts" text-anchor="middle">things worth keeping</text></g><path d="M164,40 L227,40" class="ln data" marker-end="url(#ah-data)"/><text x="196" y="32" class="tl data" text-anchor="middle">save</text><g><rect x="230" y="18" width="130" height="44" rx="10" class="b data"/><text x="295.0" y="37.0" class="t" text-anchor="middle">Store</text><text x="295.0" y="52.0" class="ts" text-anchor="middle">long-term</text></g><path d="M430,40 L363,40" class="ln code" marker-end="url(#ah-code)"/><text x="397" y="32" class="tl code" text-anchor="middle">tidy</text><g><rect x="432" y="18" width="150" height="44" rx="10" class="b code"/><text x="507.0" y="37.0" class="t" text-anchor="middle">Nightly job</text><text x="507.0" y="52.0" class="ts" text-anchor="middle">merge, drop stale</text></g><path d="M295,62 L295,105" class="ln data" marker-end="url(#ah-data)"/><text x="303" y="88" class="tl data" text-anchor="start">search</text><g><rect x="24" y="108" width="140" height="44" rx="10" class="b "/><text x="94.0" y="134.5" class="t" text-anchor="middle">New message</text></g><path d="M164,130 L227,130" class="ln" marker-end="url(#ah)"/><g><rect x="230" y="108" width="130" height="44" rx="10" class="b code"/><text x="295.0" y="127.0" class="t" text-anchor="middle">Retrieve</text><text x="295.0" y="142.0" class="ts" text-anchor="middle">the best few</text></g><path d="M360,130 L407,130" class="ln" marker-end="url(#ah)"/><g><rect x="410" y="108" width="110" height="44" rx="10" class="b code"/><text x="465.0" y="127.0" class="t" text-anchor="middle">Context</text><text x="465.0" y="142.0" class="ts" text-anchor="middle">for this call</text></g><path d="M520,130 L563,130" class="ln model" marker-end="url(#ah-model)"/><g><rect x="566" y="108" width="96" height="44" rx="10" class="b model"/><text x="614.0" y="134.5" class="t" text-anchor="middle">Model</text></g></svg></div><figcaption><b>Two paths.</b> Saving is the top row. Remembering is the bottom row, and it only works if the search finds the right few items.</figcaption></div></figure>
+  <dl class="facts">
+    <dt>You build</dt>
+    <dd>A <strong>store</strong> for things worth keeping. <strong>Retrieval</strong>: finding the few stored items that matter for the current message and adding them to the context. A <strong>nightly job</strong> that tidies the store by merging duplicates and dropping what is stale.</dd>
+    <dt>Why it matters</dt>
+    <dd>Context is limited and you pay for all of it. Deciding what to keep, what to fetch and what to forget is a design problem every serious agent has. Retrieval is also the most common pattern in company AI systems, where it goes by the name RAG.</dd>
+    <dt>Exit test</dt>
+    <dd>Recall evals pass, for example "what did I eat last week?"</dd>
+    <dt>Read first</dt>
+    <dd>LangChain's <a href="https://github.com/langchain-ai/rag-from-scratch">RAG From Scratch</a> series: short videos with a notebook each, one idea at a time. Your earlier agent-wikis retrieval research applies here too.</dd>
+    <dt>Got it when</dt>
+    <dd>You can show retrieval failing separately from generation, measure recall on your own questions, and explain what the nightly job keeps, merges and forgets.</dd>
+  </dl>
+</section>
+
+<!-- ============ PHASE 6 ============ -->
+<section class="phase" id="p6">
+  <header><span class="num">6</span><h2>Game agent</h2></header>
+  <p>A second agent, nothing like the first. It plays 2048 in a browser. 2048 works well because it looks good in a demo, the board can be read as text, and the score is the eval.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 190" role="img" aria-label="Game loop. The state reader turns the browser board into text. Jev picks a move on every turn. The harness presses the key, the board changes and the loop repeats. An LLM planner sets strategy now and then."><g><rect x="374" y="12" width="140" height="44" rx="10" class="b model"/><text x="444.0" y="31.0" class="t" text-anchor="middle">LLM planner</text><text x="444.0" y="46.0" class="ts" text-anchor="middle">slow, now and then</text></g><path d="M444,56 L444,91" class="ln model" marker-end="url(#ah-model)"/><text x="452" y="78" class="tl model" text-anchor="start">strategy</text><g><rect x="16" y="94" width="140" height="52" rx="10" class="b "/><text x="86.0" y="117.0" class="t" text-anchor="middle">Browser</text><text x="86.0" y="132.0" class="ts" text-anchor="middle">the 2048 board</text></g><path d="M156,120 L193,120" class="ln" marker-end="url(#ah)"/><text x="175" y="112" class="tl" text-anchor="middle">read</text><g><rect x="196" y="94" width="140" height="52" rx="10" class="b code"/><text x="266.0" y="117.0" class="t" text-anchor="middle">State reader</text><text x="266.0" y="132.0" class="ts" text-anchor="middle">the board as text</text></g><path d="M336,120 L371,120" class="ln" marker-end="url(#ah)"/><g><rect x="374" y="94" width="140" height="52" rx="10" class="b model"/><text x="444.0" y="117.0" class="t" text-anchor="middle">Jev</text><text x="444.0" y="132.0" class="ts" text-anchor="middle">fast, every move</text></g><path d="M514,120 L549,120" class="ln model" marker-end="url(#ah-model)"/><text x="532" y="112" class="tl model" text-anchor="middle">move</text><g><rect x="552" y="94" width="112" height="52" rx="10" class="b code"/><text x="608.0" y="124.5" class="t" text-anchor="middle">Press a key</text></g><path d="M608,146 L608,174 L86,174 L86,149" class="ln" marker-end="url(#ah)"/><text x="347" y="168" class="tl" text-anchor="middle">the board changes, go again</text></svg></div><figcaption><b>The same loop shape as Phase 1, with two models.</b> A fast one decides every move. A slow one thinks only when it is worth paying for.</figcaption></div></figure>
+  <dl class="facts">
+    <dt>You build</dt>
+    <dd>A <strong>sandboxed browser</strong> the agent controls. A <strong>state reader</strong> that turns the board into text. A <strong>planner</strong> (the LLM) that sets strategy, and a <strong>mover</strong> (Jev) that picks each move.</dd>
+    <dt>What Jev is</dt>
+    <dd>TypeSafe's decision model. You give it the situation and a typed question, such as "which of these four moves?", and it returns an answer with a probability. It writes no text. That makes it cheap and fast for the many small decisions inside a loop.</dd>
+    <dt>Why it matters</dt>
+    <dd>It shows your core is general: a new agent, with no changes to the EA. It also teaches the split between fast, cheap decisions and slow, expensive reasoning, which is where most cost savings come from.</dd>
+    <dt>Exit test</dt>
+    <dd>A demo video and a table: score and cost per game, with Jev and without.</dd>
+    <dt>Read first</dt>
+    <dd><a href="https://openrouter.ai/docs/guides/community/jev">OpenRouter's Jev guide</a>, then <a href="https://docs.typesafe.ai">TypeSafe's docs</a>.</dd>
+    <dt>Got it when</dt>
+    <dd>You can sort every step of your game loop into "decision" or "generation", explain calibration (answers given 0.9 should be right about nine times in ten), say why you pin the model version before tuning thresholds, and show the cost per game both ways.</dd>
+  </dl>
+</section>
+
+<!-- ============ PHASE 7 ============ -->
+<section class="phase" id="p7">
+  <header><span class="num">7</span><h2>Multi-agent</h2></header>
+  <p>Agents working together, and an honest measurement of whether that helped.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 200" role="img" aria-label="Left: one agent with one context and a short token bar. Right: an orchestrator sends tasks down to three workers, each with its own context, and gets summaries back. The token bar is several times longer."><text x="20" y="20" class="th" text-anchor="start">One agent</text><text x="360" y="20" class="th" text-anchor="start">Several agents</text><path d="M330,8 L330,196" class="ln"/><g><rect x="70" y="66" width="170" height="50" rx="10" class="b code"/><text x="155.0" y="88.0" class="t" text-anchor="middle">Agent</text><text x="155.0" y="103.0" class="ts" text-anchor="middle">one context</text></g><text x="20" y="187" class="ts" text-anchor="start">tokens</text><rect x="70" y="176" width="60" height="14" rx="4" class="b code"/><g><rect x="430" y="32" width="160" height="42" rx="10" class="b code"/><text x="510.0" y="57.5" class="t" text-anchor="middle">Orchestrator</text></g><g><rect x="360" y="112" width="92" height="44" rx="10" class="b code"/><text x="406.0" y="131.0" class="t" text-anchor="middle">Worker</text><text x="406.0" y="146.0" class="ts" text-anchor="middle">own context</text></g><g><rect x="464" y="112" width="92" height="44" rx="10" class="b code"/><text x="510.0" y="131.0" class="t" text-anchor="middle">Worker</text><text x="510.0" y="146.0" class="ts" text-anchor="middle">own context</text></g><g><rect x="568" y="112" width="92" height="44" rx="10" class="b code"/><text x="614.0" y="131.0" class="t" text-anchor="middle">Worker</text><text x="614.0" y="146.0" class="ts" text-anchor="middle">own context</text></g><path d="M480,74 L408,109" class="ln code" marker-end="url(#ah-code)"/><path d="M510,74 L510,109" class="ln code" marker-end="url(#ah-code)"/><path d="M540,74 L612,109" class="ln code" marker-end="url(#ah-code)"/><text x="426" y="88" class="tl" text-anchor="end">tasks ↓</text><text x="594" y="88" class="tl" text-anchor="start">↑ summaries</text><text x="360" y="187" class="ts" text-anchor="start">tokens</text><rect x="410" y="176" width="250" height="14" rx="4" class="b code"/></svg></div><figcaption><b>Each worker starts with its own context, and you pay for every one.</b> How many times longer the right-hand bar is for your tasks is the number this phase produces.</figcaption></div></figure>
+  <dl class="facts">
+    <dt>You build</dt>
+    <dd>An <strong>orchestrator</strong> that hands work to other agents and collects what they return. The red-team agent from Phase 4 running continuously against the EA.</dd>
+    <dt>Why it matters</dt>
+    <dd>Multi-agent designs are fashionable and often worse than one good agent. They use more tokens and have more ways to fail. Knowing when they pay off, with your own numbers, sets you apart from people who only know the diagram.</dd>
+    <dt>Exit test</dt>
+    <dd>An ADR with numbers: where several agents beat one, and where they lost.</dd>
+    <dt>Read first</dt>
+    <dd>Two pieces that disagree, back to back: Anthropic's <a href="https://www.anthropic.com/engineering/multi-agent-research-system">How we built our multi-agent research system</a> and Cognition's <a href="https://cognition.com/blog/dont-build-multi-agents">Don't Build Multi-Agents</a>.</dd>
+    <dt>Got it when</dt>
+    <dd>You can argue both sides, state the token multiplier you measured, and say exactly what a sub-agent hands back to its parent and what it must not.</dd>
+  </dl>
+</section>
+
+<!-- ============ PHASE 8 ============ -->
+<section class="phase" id="p8">
+  <header><span class="num">8</span><h2>Enterprise pack</h2></header>
+  <p>Documents, no code. You describe the harness the way a regulated company would need it described before it could be approved.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 198" role="img" aria-label="Four harness parts each map to something a risk team asks for. Gateway maps to controlled data egress. Policy maps to least privilege and sign-off. The event log maps to an audit trail. Evals map to evidence before release."><text x="30" y="18" class="th" text-anchor="start">Your harness has</text><text x="400" y="18" class="th" text-anchor="start">A risk team asks for</text><g><rect x="30" y="30" width="250" height="32" rx="8" class="b code"/><text x="155.0" y="50.5" class="t" text-anchor="middle">Gateway: one door out</text></g><g><rect x="400" y="30" width="250" height="32" rx="8" class="b "/><text x="525.0" y="50.5" class="t" text-anchor="middle">Data leaves only as approved</text></g><path d="M280,46 L397,46" class="ln code" marker-end="url(#ah-code)"/><g><rect x="30" y="72" width="250" height="32" rx="8" class="b code"/><text x="155.0" y="92.5" class="t" text-anchor="middle">Policy: allowlist, approvals</text></g><g><rect x="400" y="72" width="250" height="32" rx="8" class="b "/><text x="525.0" y="92.5" class="t" text-anchor="middle">Least privilege, human sign-off</text></g><path d="M280,88 L397,88" class="ln code" marker-end="url(#ah-code)"/><g><rect x="30" y="114" width="250" height="32" rx="8" class="b code"/><text x="155.0" y="134.5" class="t" text-anchor="middle">Event log: a full trace</text></g><g><rect x="400" y="114" width="250" height="32" rx="8" class="b "/><text x="525.0" y="134.5" class="t" text-anchor="middle">An audit trail</text></g><path d="M280,130 L397,130" class="ln code" marker-end="url(#ah-code)"/><g><rect x="30" y="156" width="250" height="32" rx="8" class="b code"/><text x="155.0" y="176.5" class="t" text-anchor="middle">Evals: a gate on every change</text></g><g><rect x="400" y="156" width="250" height="32" rx="8" class="b "/><text x="525.0" y="176.5" class="t" text-anchor="middle">Evidence before release</text></g><path d="M280,172 L397,172" class="ln code" marker-end="url(#ah-code)"/></svg></div><figcaption><b>You will already have built the controls.</b> Phase 8 writes down which requirement each one answers.</figcaption></div></figure>
+  <dl class="facts">
+    <dt>You build</dt>
+    <dd>A <strong>reference architecture</strong>. A <strong>control mapping</strong> from what your harness does to the frameworks such a company follows: NIST AI RMF, ISO/IEC 42001, the EU AI Act and, for banks, SR 11-7. A <strong>card for each agent</strong>: what it does, what it may touch, who owns it. An <strong>incident playbook</strong>: the kill switch, rolling back a prompt, the review afterwards.</dd>
+    <dt>Why it matters</dt>
+    <dd>This is the translation between an engineer and a risk committee. Most of an architect's output is documents like these.</dd>
+    <dt>Exit test</dt>
+    <dd>A set of documents an architecture review board would accept.</dd>
+    <dt>Read first</dt>
+    <dd>The <a href="https://www.nist.gov/itl/ai-risk-management-framework">NIST AI Risk Management Framework</a> and its Generative AI Profile, linked from the same page.</dd>
+    <dt>Got it when</dt>
+    <dd>You can map one harness control to one framework line, draw your reference architecture from memory, and explain who signs off on a prompt change at a bank and what evidence they need.</dd>
+  </dl>
+</section>
+
+<!-- ============ SIDE TRACKS ============ -->
+<section class="phase" id="models">
+  <header><span class="chip">Side track</span><h2>Models</h2></header>
+  <p>The Lab below shows how a model works inside. This track is the job people do in practice: take an existing open model from Hugging Face, adapt it, prove it is better and publish it. Each step reuses what the one before it built.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 150" role="img" aria-label="Models pipeline: events are exported to a dataset you scrub, a model is fine-tuned on it and published to the Hub. The harness reaches the model through the gateway like any other."><g><rect x="16" y="22" width="120" height="46" rx="10" class="b data"/><text x="76.0" y="42.0" class="t" text-anchor="middle">Events</text><text x="76.0" y="57.0" class="ts" text-anchor="middle">your logs</text></g><path d="M136,45 L183,45" class="ln data" marker-end="url(#ah-data)"/><text x="160" y="37" class="tl data" text-anchor="middle">export</text><g><rect x="186" y="22" width="120" height="46" rx="10" class="b data"/><text x="246.0" y="42.0" class="t" text-anchor="middle">Dataset</text><text x="246.0" y="57.0" class="ts" text-anchor="middle">scrubbed by you</text></g><path d="M306,45 L353,45" class="ln" marker-end="url(#ah)"/><text x="330" y="37" class="tl" text-anchor="middle">train</text><g><rect x="356" y="22" width="120" height="46" rx="10" class="b model"/><text x="416.0" y="42.0" class="t" text-anchor="middle">Model</text><text x="416.0" y="57.0" class="ts" text-anchor="middle">fine-tuned</text></g><path d="M476,45 L541,45" class="ln model" marker-end="url(#ah-model)"/><text x="509" y="37" class="tl model" text-anchor="middle">publish</text><g><rect x="544" y="22" width="120" height="46" rx="10" class="b out"/><text x="604.0" y="42.0" class="t" text-anchor="middle">Hub</text><text x="604.0" y="57.0" class="ts" text-anchor="middle">public</text></g><path d="M416,68 L416,97" class="ln model" marker-end="url(#ah-model)"/><g><rect x="356" y="100" width="120" height="40" rx="10" class="b code"/><text x="416.0" y="124.5" class="t" text-anchor="middle">Gateway</text></g><path d="M476,120 L541,120" class="ln code" marker-end="url(#ah-code)"/><g><rect x="544" y="100" width="120" height="40" rx="10" class="b code"/><text x="604.0" y="124.5" class="t" text-anchor="middle">Agents</text></g><text x="16" y="116" class="ts" text-anchor="start">Raw EA logs never leave your Mac.</text><text x="16" y="132" class="ts" text-anchor="start">Only scrubbed or synthetic data is used.</text></svg></div><figcaption><b>Your own model comes back in through the same door.</b> The agents cannot tell it from any other model, which is the point of the gateway.</figcaption></div></figure>
+  <div class="tw"><table>
+    <thead><tr><th>Step</th><th>You build</th><th>Compared against</th><th>Start after</th></tr></thead>
+    <tbody>
+      <tr><td>M1 Use</td><td>Pull two or three open models, read their model cards and licences, run them.</td><td>Your current model, on the EA golden set.</td><td>Phase 2</td></tr>
+      <tr><td>M2 Classifier</td><td>Fine-tune a small model to flag prompt injection, trained on your red-team attacks.</td><td>Jev and an LLM: accuracy, cost, speed.</td><td>Phase 4</td></tr>
+      <tr><td>M3 Embeddings</td><td>Choose or tune the embedding model behind memory search.</td><td>Your retrieval eval, before and after.</td><td>Phase 5</td></tr>
+      <tr><td>M4 Task model</td><td>Fine-tune a small open LLM for one EA job, such as turning a food message into a structured log.</td><td>The big model: quality and cost per task.</td><td>Phase 3</td></tr>
+    </tbody>
+  </table></div>
+  <dl class="facts">
+    <dt>Read first</dt>
+    <dd>Hugging Face's free <a href="https://huggingface.co/learn/llm-course">LLM Course</a>, then its <a href="https://github.com/huggingface/smol-course">smol-course</a> for fine-tuning.</dd>
+    <dt>Rules</dt>
+    <dd>Never publish raw EA logs. Public training data is synthetic or generated by the red team, then scrubbed and read by you. Every published model has a model card: what it is for, what it was trained on, its eval numbers, its known failures and its licence. Every training run is logged with its GPU hours and cost. GPU spend is its own budget, outside the $20 a month for model calls.</dd>
+    <dt>Got it when</dt>
+    <dd>You can say when not to fine-tune, spot overfitting on a loss curve, explain what LoRA trains and defend your train/test split against leakage.</dd>
+  </dl>
+</section>
+
+<section class="phase" id="lab">
+  <header><span class="chip">Side track</span><h2>Lab</h2></header>
+  <p>Sebastian Raschka's book <em>Build a Large Language Model (From Scratch)</em>. Do it any time, alongside the phases. It lives in <code>lab/</code> and imports nothing from the harness.</p>
+<figure class="fig"><div class="in"><div class="dgwrap"><svg class="dg" viewBox="0 0 680 96" role="img" aria-label="The book in order: tokens, attention, the GPT model, training, fine-tuning a classifier, fine-tuning to follow instructions."><g><rect x="12" y="22" width="98" height="52" rx="10" class="b model"/><text x="61.0" y="45.0" class="t" text-anchor="middle">2 Tokens</text><text x="61.0" y="60.0" class="ts" text-anchor="middle">text as numbers</text></g><path d="M112,48.0 L121,48.0" class="ln" marker-end="url(#ah)"/><g><rect x="124" y="22" width="98" height="52" rx="10" class="b model"/><text x="173.0" y="45.0" class="t" text-anchor="middle">3 Attention</text><text x="173.0" y="60.0" class="ts" text-anchor="middle">what to look at</text></g><path d="M224,48.0 L232,48.0" class="ln" marker-end="url(#ah)"/><g><rect x="235" y="22" width="98" height="52" rx="10" class="b model"/><text x="284.0" y="45.0" class="t" text-anchor="middle">4 GPT</text><text x="284.0" y="60.0" class="ts" text-anchor="middle">the full model</text></g><path d="M335,48.0 L344,48.0" class="ln" marker-end="url(#ah)"/><g><rect x="347" y="22" width="98" height="52" rx="10" class="b model"/><text x="396.0" y="45.0" class="t" text-anchor="middle">5 Training</text><text x="396.0" y="60.0" class="ts" text-anchor="middle">it learns</text></g><path d="M447,48.0 L455,48.0" class="ln" marker-end="url(#ah)"/><g><rect x="458" y="22" width="98" height="52" rx="10" class="b model"/><text x="507.0" y="45.0" class="t" text-anchor="middle">6 Classifier</text><text x="507.0" y="60.0" class="ts" text-anchor="middle">fine-tune one</text></g><path d="M558,48.0 L567,48.0" class="ln" marker-end="url(#ah)"/><g><rect x="570" y="22" width="98" height="52" rx="10" class="b model"/><text x="619.0" y="45.0" class="t" text-anchor="middle">7 Instruct</text><text x="619.0" y="60.0" class="ts" text-anchor="middle">fine-tune two</text></g></svg></div><figcaption><b>Each chapter builds the next part of a working model.</b></figcaption></div></figure>
+  <div class="tw"><table>
+    <thead><tr><th>Chapter</th><th>You build</th><th>Pays off in</th></tr></thead>
+    <tbody>
+      <tr><td>2 Text data</td><td>A tokenizer and embeddings.</td><td>A feel for token cost (Phase 3).</td></tr>
+      <tr><td>3 Attention</td><td>Self-attention by hand.</td><td>Why the order and length of context matter (Phases 1 and 5).</td></tr>
+      <tr><td>4 GPT model</td><td>The full architecture.</td><td>Reading model cards and papers.</td></tr>
+      <tr><td>5 Pretraining</td><td>A training loop, loss and sampling.</td><td>Temperature, top-k and run-to-run variance (Phase 2).</td></tr>
+      <tr><td>6 Classifier</td><td>A fine-tuned spam classifier.</td><td>Comparing it with Jev and an LLM on one eval.</td></tr>
+      <tr><td>7 Instructions</td><td>A model fine-tuned to follow instructions.</td><td>Fine-tune or prompt or retrieve: knowing which to pick.</td></tr>
+    </tbody>
+  </table></div>
+  <dl class="facts">
+    <dt>Use with</dt>
+    <dd>The book's <a href="https://github.com/rasbt/LLMs-from-scratch">code repository</a> and Raschka's <a href="https://sebastianraschka.com/teaching/">course page</a>, which links his chapter-by-chapter videos. For the ideas in pictures: 3Blue1Brown on <a href="https://www.youtube.com/watch?v=wjZofJX0v4M">transformers</a> and <a href="https://www.youtube.com/watch?v=eMlx5fFNoYc">attention</a>. For a second from-scratch build: Karpathy's <a href="https://www.youtube.com/watch?v=kCc8FmEb1nY">Let's build GPT</a>.</dd>
+    <dt>Got it when</dt>
+    <dd>You can explain attention with an analogy of your own, say what the loss number means while a model trains, and explain temperature and top-k from code you wrote.</dd>
+  </dl>
+</section>
+
+<h2>Topics that ride along</h2>
+<p>These do not get a phase of their own. Each one turns up inside a phase, and an expert is expected to have a view on all of them.</p>
+<div class="tw"><table>
+  <thead><tr><th>Topic</th><th>What it covers</th><th>Where you meet it</th></tr></thead>
+  <tbody>
+    <tr><td>Reliability</td><td>Timeouts, retries, fallbacks, tools that are safe to run twice.</td><td>Phases 1 and 3</td></tr>
+    <tr><td>Observability</td><td>Dashboards and alerts on top of your traces. The OpenTelemetry conventions for model calls.</td><td>Phase 3</td></tr>
+    <tr><td>Model selection</td><td>A scorecard for choosing a model: quality, cost, speed, licence, data terms.</td><td>Phase 3</td></tr>
+    <tr><td>MCP</td><td>The <a href="https://modelcontextprotocol.io/">Model Context Protocol</a>, the common standard for plugging tools into agents. Build one server and one client, and learn its security holes.</td><td>Phase 4</td></tr>
+    <tr><td>Agent identity</td><td>Who the agent is acting as, with what permissions, and who approved them.</td><td>Phase 4</td></tr>
+    <tr><td>Data handling</td><td>Classes of personal data, how long things are kept, what may leave the machine.</td><td>Phase 4</td></tr>
+    <tr><td>Supply chain</td><td>Pinned dependencies, where a model came from, how far to trust a third-party tool.</td><td>Phase 4</td></tr>
+    <tr><td>Governance</td><td>How the system maps to a company's risk controls.</td><td>Phase 8</td></tr>
+    <tr><td>Incident response</td><td>Kill switch, rollback, the review afterwards.</td><td>Phase 8</td></tr>
+    <tr><td>Writing</td><td>ADRs and write-ups. A portfolio page that links them all.</td><td>Every phase</td></tr>
+  </tbody>
+</table></div>
+
+<h2>Staying current</h2>
+<p>Keep the feed this small. Following people keeps you current. Learning comes from building the phase you are on.</p>
+<div class="tw"><table>
+  <thead><tr><th>Who</th><th>Where</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Simon Willison</td><td><a href="https://simonwillison.net/">simonwillison.net</a></td><td>The best daily filter on what matters. Strongest on security.</td></tr>
+    <tr><td>Hamel Husain</td><td><a href="https://hamel.dev/">hamel.dev</a></td><td>Evals.</td></tr>
+    <tr><td>Andrej Karpathy</td><td><a href="https://www.youtube.com/@AndrejKarpathy">YouTube</a></td><td>Fundamentals, explained from scratch.</td></tr>
+    <tr><td>swyx</td><td><a href="https://www.latent.space/">Latent Space</a>, newsletter and podcast</td><td>Trends in AI engineering.</td></tr>
+    <tr><td>Sebastian Raschka</td><td><a href="https://magazine.sebastianraschka.com/">Ahead of AI</a> newsletter</td><td>Model internals and research.</td></tr>
+    <tr><td>AI Engineer</td><td><a href="https://www.youtube.com/@aiDotEngineer">YouTube channel</a></td><td>Talks by people who run these systems.</td></tr>
+  </tbody>
+</table></div>
+
+<h2>Open items</h2>
+<ul>
+  <li><strong>Jev version and price.</strong> Access is settled: an OpenRouter key is enough. Versions 1.13 and 1.14 are both listed. Pin one when you reach Phase 3 and read the price off its model page then.</li>
+  <li><strong>Jev and images.</strong> It accepts images, but OpenRouter marks that as an early feature that runs in a slower mode. The plan still reads the 2048 board as text.</li>
+  <li><strong>Serving for M4.</strong> A classifier or embedding model runs on the MacBook's CPU. A tuned LLM needs a hosted endpoint billed by the hour. Price it when you get there.</li>
+  <li><strong>Tools for the Models track.</strong> Training libraries and GPU rental are not chosen yet. Pick them at M1.</li>
+  <li><strong>Framework editions.</strong> Confirm the current versions of the OWASP, NIST, ISO and EU documents when you reach Phases 4 and 8.</li>
+</ul>
+<p class="small">Links on this page were checked on 14 November 2026.</p>
+
+<div class="pager">
+  <a href="phase-1-agent-loop.html"><span class="lbl">Current phase</span>← Phase 1: make it an agent</a>
+  <a href="index.html"><span class="lbl">Back to</span>Start here →</a>
+</div>
+
+</main>
+<script>
+// Harness Handbook: copy buttons and "done" ticks. Both are conveniences;
+// every page reads fine with this file missing.
+
+(function () {
+  // Copy button on every code box.
+  document.querySelectorAll(".codebox").forEach(function (box) {
+    var head = box.querySelector("header");
+    var pre = box.querySelector("pre");
+    if (!head || !pre) return;
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy";
+    btn.textContent = "Copy";
+    btn.addEventListener("click", function () {
+      var done = function () {
+        btn.textContent = "Copied";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1200);
+      };
+      var selectText = function () {
+        var range = document.createRange();
+        range.selectNodeContents(pre);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        btn.textContent = "Selected";
+      };
+      try {
+        navigator.clipboard.writeText(pre.innerText).then(done, selectText);
+      } catch (e) {
+        selectText();
+      }
+    });
+    head.appendChild(btn);
+  });
+
+  // "Done" ticks on steps, remembered in this browser only.
+  var KEY = "harness-handbook:" + (document.body.dataset.page || "page");
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { saved = {}; }
+
+  function paint(id, on) {
+    var step = document.getElementById(id);
+    if (step) step.classList.toggle("is-done", on);
+    document.querySelectorAll('.steplist li[data-step="' + id + '"], .track a[data-step="' + id + '"]').forEach(function (el) {
+      el.classList.toggle("is-done", on);
+    });
+  }
+
+  document.querySelectorAll(".step .tick input").forEach(function (box) {
+    var step = box.closest(".step");
+    if (!step || !step.id) return;
+    box.checked = !!saved[step.id];
+    paint(step.id, box.checked);
+    box.addEventListener("change", function () {
+      saved[step.id] = box.checked;
+      paint(step.id, box.checked);
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) { /* not saved; fine */ }
+    });
+  });
+})();
+</script>
+<script>
+// Roadmap: "watch the harness grow". Without this script every part is simply shown.
+(function () {
+  var bar = document.getElementById("phasebar");
+  var cap = document.getElementById("growcap");
+  if (!bar || !cap) return;
+  var text = [
+    "<b>Phase 0, Bot.</b> Telegram in and out, a bare assistant, one guarded gateway and an event log.",
+    "<b>Phase 1, Agent loop.</b> The loop, the tool contract and the policy check arrive. The EA gets its tools.",
+    "<b>Phase 2, Evals.</b> A runner and graders read the event log and score the EA.",
+    "<b>Phase 3, Cost.</b> A cost ledger and a budget cap in the gateway, and a decision model for routing.",
+    "<b>Phase 4, Security.</b> A red-team agent attacks the EA. The policy check gains approvals.",
+    "<b>Phase 5, Memory.</b> A long-term store with retrieval and a nightly tidy-up.",
+    "<b>Phase 6, Game agent.</b> A second agent on the same core, with no change to the first.",
+    "<b>Phase 7, Multi-agent.</b> An orchestrator hands work between the agents.",
+    "<b>Phase 8, Enterprise pack.</b> Documents that map all of this to a company's controls."
+  ];
+  var comps = document.querySelectorAll(".grow .comp");
+  function show(p) {
+    comps.forEach(function (g) {
+      var ph = Number(g.getAttribute("data-phase"));
+      var touch = (g.getAttribute("data-touch") || "").split(",");
+      g.classList.toggle("off", ph > p);
+      g.classList.toggle("new", ph === p || touch.indexOf(String(p)) !== -1);
+    });
+    bar.querySelectorAll("button").forEach(function (b) {
+      b.setAttribute("aria-pressed", b.getAttribute("data-p") === String(p) ? "true" : "false");
+    });
+    cap.innerHTML = text[p];
+  }
+  bar.addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (b) show(Number(b.getAttribute("data-p")));
+  });
+  show(1);
+})();
+</script>
+</body>
+</html>
