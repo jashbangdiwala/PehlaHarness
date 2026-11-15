@@ -1,8 +1,6 @@
 import re, time, httpx, keyring
-from events import log
-
-# Use a model ID copied from openrouter.ai/models. This is an example, verify it exists.
-MODEL = "moonshotai/kimi-k3.1-pro"
+from config import MAX_TOKENS, MODEL
+from core.events import log
 
 PATTERNS = [
     (re.compile(r"\b(?:\d[ -]?){13,19}\b"), "[CARD]"),
@@ -22,7 +20,7 @@ def ask(messages, parent_id=None):
     r = httpx.post(
         "https://openrouter.ai/api/v1/chat/completions",
         headers={"Authorization": f"Bearer {key}"},
-        json={"model": MODEL, "messages": safe,
+        json={"model": MODEL, "messages": safe, "max_tokens": MAX_TOKENS,
               "provider": {"data_collection": "deny", "allow_fallbacks": False}},
         timeout=60)
     r.raise_for_status()

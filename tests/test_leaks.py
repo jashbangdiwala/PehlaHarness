@@ -1,4 +1,4 @@
-from egress import redact
+from core.gateway import redact
 
 def test_card_is_redacted():
     assert "4111 1111 1111 1111" not in redact("pay 4111 1111 1111 1111 now")

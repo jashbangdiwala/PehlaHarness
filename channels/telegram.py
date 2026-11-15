@@ -1,10 +1,11 @@
 import os, time, httpx, keyring
-from events import log
-from egress import ask
+from agents.ea.agent import respond
+from config import ALLOWED_ID_PATH
+from core.events import log
 
 TOKEN = keyring.get_password("ea", "telegram")
 API = f"https://api.telegram.org/bot{TOKEN}"
-ID_FILE = "allowed_id.txt"
+ID_FILE = ALLOWED_ID_PATH
 ALLOWED = int(open(ID_FILE).read().strip()) if os.path.exists(ID_FILE) else None
 
 def scrub(e):
@@ -20,7 +21,7 @@ def handle(update):
         return
     uid = msg["from"]["id"]
     if ALLOWED is None:
-        print(f"Your Telegram user ID is {uid}. Put it in {ID_FILE} and restart.")
+        print(f"Your Telegram user ID is {uid}. Put it in {ID_FILE.name} and restart.")
         log("dropped", {"reason": "no allowlist yet"})
         return
     if uid != ALLOWED:
@@ -28,12 +29,7 @@ def handle(update):
                         "name": msg["from"].get("first_name"),
                         "text": msg["text"]})   # silent: no reply
         return
-    mid = log("message", {"text": msg["text"]})
-    reply = ask([
-        {"role": "system", "content": "You are a concise personal assistant."},
-        {"role": "user", "content": msg["text"]},
-    ], parent_id=mid)
-    log("reply", {"text": reply}, parent_id=mid)
+    reply = respond(msg["text"])
     send(msg["chat"]["id"], reply)
 
 def main():

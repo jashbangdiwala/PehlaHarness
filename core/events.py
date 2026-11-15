@@ -1,6 +1,8 @@
 import sqlite3, json, time
 
-db = sqlite3.connect("ea.db")
+from config import DB_PATH
+
+db = sqlite3.connect(DB_PATH)
 db.execute("""CREATE TABLE IF NOT EXISTS events(
   id INTEGER PRIMARY KEY, ts REAL, kind TEXT,
   domain TEXT, payload TEXT, parent_id INTEGER)""")
