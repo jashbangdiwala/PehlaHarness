@@ -15,7 +15,7 @@ Artifcats/phase-1-agent-loop.html.
 - Every model call goes through core/gateway. Nothing else talks to a model.
 - Every tool run goes through core/policy first.
 - Secrets come from keyring only. Never print, log or commit them.
-- ea.db, allowed_id.txt and private/ are never committed.
+- Database/ (ea.db and my queries), allowed_id.txt and private/ are never committed.
 
 ## How we work
 - One step per session. Do only the step I name.
